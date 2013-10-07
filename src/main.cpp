@@ -1,5 +1,5 @@
 #include <GLFW/glfw3.h>
-#include "fluidmodel.hpp"
+#include "fluidsimulator.hpp"
 #include <memory>
 #include <chrono>
 #include <iostream>
@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 	glfwSetCursorPosCallback(window, cursorPosition);
 	glfwSetMouseButtonCallback(window, mouseButtonCallback);
 
-	auto fluid = fsim::Simulator::create(windowWidth, windowHeight);
+	auto fluid = Simulator::create(windowWidth, windowHeight);
 	fluid->createParticles(150, 150);
 	fluid->step();
 
@@ -83,12 +83,15 @@ int main(int argc, char** argv)
 		glBegin(GL_POINTS);
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		auto start = std::chrono::high_resolution_clock::now();
+		fluid->setDrag(mouse.pressed);
+		fluid->setMovePos(mouse.x / 4.f, mouse.y / 4.f);
 		fluid->step();
 		auto end = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 		auto particle_count = fluid->particleCount();
 		auto particles = fluid->getParticles();
-		for (size_t i = 0; i < particle_count; ++i) {
+		for (size_t i = 0; i < particle_count; ++i)
+		{
 			const auto& particle = particles[i];
 			float x1 = particle.x * 4.f;
 			float y1 = height - particle.y * 4.f;

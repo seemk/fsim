@@ -2,7 +2,12 @@ cmake_minimum_required (VERSION 2.8)
 project (fsm)
 
 if(UNIX)
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -ffast-math -std=c++11")
+elseif(MSVC)
+	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
+	endif()
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:fast")
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
