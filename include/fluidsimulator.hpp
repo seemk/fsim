@@ -57,6 +57,7 @@ public:
 
 	Simulator(int gridSizeX, int gridSizeY);
 	void createParticles(size_t countX, size_t countY);
+	void addParticle(const Particle& p);
 	void step();
 	void setDrag(bool drag);
 	void setMovePos(float x, float y);
