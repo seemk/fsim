@@ -14,9 +14,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 set(GLFW_PATH "third_party/glfw")
+set(GLM_PATH "third_party/glm")
+
 add_subdirectory(${GLFW_PATH})
 
 include_directories(${GLFW_PATH}/include)
+include_directories(${GLM_PATH}/)
 include_directories(include)
 
 add_subdirectory(src)

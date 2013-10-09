@@ -3,6 +3,8 @@
 #include <memory>
 #include <chrono>
 #include <iostream>
+#include "DrawingPrimitives.hpp"
+#include <glm\glm.hpp>
 
 struct Mouse
 {
@@ -55,13 +57,9 @@ int main(int argc, char** argv)
 	glfwSetMouseButtonCallback(window, mouseButtonCallback);
 
 	auto fluid = Simulator::create(windowWidth, windowHeight);
-	fluid->createParticles(150, 150);
+	fluid->createParticles(25, 25);
 	fluid->step();
 
-	glEnable(GL_POINT_SMOOTH);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glPointSize(1.0f);
 	float ratio = 0.0f;
 	int width, height;
 
@@ -69,7 +67,12 @@ int main(int argc, char** argv)
 	long long totalTime = 0;
     while (!glfwWindowShouldClose(window))
     {
-		
+		auto start = std::chrono::high_resolution_clock::now();
+		fluid->setDrag(mouse.pressed);
+		fluid->setMovePos(mouse.x / 8.f, mouse.y / 8.f);
+		fluid->step();
+		auto end = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 		glfwGetFramebufferSize(window, &width, &height);
 		ratio = width / static_cast<float>(height);
 		glViewport(0, 0, windowWidth, windowHeight);
@@ -80,28 +83,34 @@ int main(int argc, char** argv)
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 		glClear(GL_COLOR_BUFFER_BIT);
-		glBegin(GL_POINTS);
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-		auto start = std::chrono::high_resolution_clock::now();
-		fluid->setDrag(mouse.pressed);
-		fluid->setMovePos(mouse.x / 4.f, mouse.y / 4.f);
-		fluid->step();
-		auto end = std::chrono::high_resolution_clock::now();
-		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+		glColor3f(1.0f, 0.0f, 0.0f);
+
 		auto particle_count = fluid->particleCount();
 		auto particles = fluid->getParticles();
 		for (size_t i = 0; i < particle_count; ++i)
 		{
 			const auto& particle = particles[i];
-			float x1 = particle.x * 4.f;
-			float y1 = height - particle.y * 4.f;
-			glVertex2f(x1, y1);
+			float x1 = particle.x * 8.f;
+			float y1 = height - particle.y * 8.f;
+
+			DrawingPrimitives::drawCircle(glm::vec2(x1, y1), 10.0f);
 		}
 
-		glEnd();
+		auto grid = fluid->getGrid();
+		float w = width / static_cast<float>(grid.rows());
+		float h = height / static_cast<float>(grid.cols());
+		glColor3f(0.5f, 0.5f, 0.5f);
+		for (size_t y = 0; y < grid.cols(); y++)
+		{
+			for (size_t x = 0; x < grid.rows(); x++)
+			{
+				glm::vec2 p1(x * w, y * h);
+				glm::vec2 p2(p1.x + w, p1.y + h);
+				DrawingPrimitives::drawRectangle(p1, p2);
+			}
+		}
 
         glfwSwapBuffers(window);
-
         glfwPollEvents();
 		totalTime += duration.count();
 		frameCount++;

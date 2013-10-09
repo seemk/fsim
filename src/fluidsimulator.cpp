@@ -13,7 +13,7 @@ std::unique_ptr<Simulator> Simulator::create(int windowWidth, int windowHeight)
 {
 	int sim_w = windowWidth;
 	int sim_h = windowHeight;
-	auto fluid = std::make_unique<Simulator>(sim_w / 4, sim_h / 4);
+	auto fluid = std::make_unique<Simulator>(sim_w / 8, sim_h / 8);
 	return fluid;
 }
 

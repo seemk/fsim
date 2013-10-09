@@ -62,6 +62,7 @@ public:
 	void setMovePos(float x, float y);
 
 	std::vector<Particle>& getParticles();
+	Array2D<Node>& getGrid() { return grid; }
 
 	std::random_device rd;
 	Distribution distribution;
