@@ -107,7 +107,7 @@ int main(int argc, char** argv)
 		auto grid = fluid->getGrid();
 		float w = width / static_cast<float>(grid.rows());
 		float h = height / static_cast<float>(grid.cols());
-		glColor3f(0.5f, 0.5f, 0.5f);
+		glColor3f(0.15f, 0.15f, 0.15f);
 		for (size_t y = 0; y < grid.cols(); y++)
 		{
 			for (size_t x = 0; x < grid.rows(); x++)

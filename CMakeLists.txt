@@ -11,7 +11,6 @@ elseif(MSVC)
 	add_definitions(-DGLEW_STATIC)
 endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 set(GLEW_PATH "third_party/glew")
