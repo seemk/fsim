@@ -14,4 +14,5 @@ set(fsm_SOURCES
 
 add_executable(fluid ${fsm_SOURCES} ${fsm_HEADERS})
 target_link_libraries(fluid
-	glfw ${GLFW_LIBRARIES})
+	glfw ${GLFW_LIBRARIES}
+	glew ${GLEW_LIBRARIES})

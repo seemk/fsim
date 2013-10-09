@@ -1,7 +1,8 @@
 #include "DrawingPrimitives.hpp"
 #include <cmath>
-#include <GLFW\glfw3.h>
+#include <GL\glew.h>
 #include <glm\gtx\constants.hpp>
+
 namespace DrawingPrimitives
 {
 	void drawCircle(glm::vec2 center, float r, int segments)

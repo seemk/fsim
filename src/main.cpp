@@ -1,3 +1,4 @@
+#include <GL\glew.h>
 #include <GLFW/glfw3.h>
 #include "fluidsimulator.hpp"
 #include <memory>
@@ -55,6 +56,13 @@ int main(int argc, char** argv)
     glfwMakeContextCurrent(window);
 	glfwSetCursorPosCallback(window, cursorPosition);
 	glfwSetMouseButtonCallback(window, mouseButtonCallback);
+	
+	GLenum err = glewInit();
+	if (err != GLEW_OK)
+	{
+		std::cout << "GLEW init failed. Exiting.\n";
+		return -1;
+	}
 
 	auto fluid = Simulator::create(windowWidth, windowHeight);
 	fluid->createParticles(25, 25);
