@@ -1,5 +1,4 @@
 #pragma once
-
 #include "FluidSimulator.hpp"
 #include "Vertex.hpp"
 

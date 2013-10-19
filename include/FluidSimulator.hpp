@@ -4,10 +4,10 @@
 	Original by Grant Kot (https://github.com/kotsoft/)
 */
 
-#include "Array2d.hpp"
+#include "Array2D.hpp"
 #include "Particle.hpp"
 #include "Material.hpp"
-#include <glm\glm.hpp>
+#include <glm/glm.hpp>
 #include <random>
 #include <memory>
 

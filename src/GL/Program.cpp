@@ -1,6 +1,6 @@
-#include "GL\Program.hpp"
-#include <GL\glew.h>
-#include <GL\Shader.hpp>
+#include "GL/Program.hpp"
+#include <GL/glew.h>
+#include <GL/Shader.hpp>
 #include <memory>
 #include <iostream>
 

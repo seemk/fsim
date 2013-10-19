@@ -1,6 +1,6 @@
 #include "ShaderManager.hpp"
 #include "Util.hpp"
-#include <GL\Shader.hpp>
+#include <GL/Shader.hpp>
 #include <string>
 
 void ShaderManager::useProgram(ProgramType type) const

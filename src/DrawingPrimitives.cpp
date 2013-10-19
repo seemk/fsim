@@ -1,6 +1,6 @@
 #include "DrawingPrimitives.hpp"
-#include <glm\ext.hpp>
-#include <GL\glew.h>
+#include <glm/ext.hpp>
+#include <GL/glew.h>
 #include "ShaderManager.hpp"
 
 namespace DrawingPrimitives

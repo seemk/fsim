@@ -1,7 +1,7 @@
 #pragma once
-#include <GL\Program.hpp>
+#include <GL/Program.hpp>
 #include <unordered_map>
-#include <glm\glm.hpp>
+#include <glm/glm.hpp>
 
 class ShaderManager
 {

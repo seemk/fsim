@@ -2,7 +2,7 @@
 #include <vector>
 #include <memory>
 #include <initializer_list>
-#include <GL\glew.h>
+#include <GL/glew.h>
 
 namespace GL
 {
