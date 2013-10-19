@@ -69,7 +69,7 @@ namespace GL
 		GLint infoLogLength = 0;
 		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
 
-		auto infoLogBuf = std::make_unique<char[]>(infoLogLength + 1);
+		auto infoLogBuf = std::unique_ptr<char[]>(new char[infoLogLength + 1]);
 		glGetProgramInfoLog(program, infoLogLength, nullptr, infoLogBuf.get());
 		return std::string(infoLogBuf.get(), infoLogLength);
 	}
