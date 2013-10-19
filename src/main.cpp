@@ -1,11 +1,12 @@
-#include <GL\glew.h>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include "fluidsimulator.hpp"
-#include <memory>
+#include <glm/ext.hpp>
+#include "FluidSimulator.hpp"
+#include "FluidRenderer.hpp"
+#include "DrawingPrimitives.hpp"
+#include "ShaderManager.hpp"
 #include <chrono>
 #include <iostream>
-#include "DrawingPrimitives.hpp"
-#include <glm\glm.hpp>
 
 struct Mouse
 {
@@ -17,12 +18,14 @@ struct Mouse
 Mouse mouse = { 0.0f, 0.0f, false };
 const int windowWidth	= 1280;
 const int windowHeight	= 720;
-const int particlesX	= 25;
-const int particlesY	= 25;
+const int particlesX	= 100;
+const int particlesY	= 100;
 
 bool addingParticles	= false;
 float scaleFactor		= 8.f;
 float particleRadius	= 10.f;
+
+static ShaderManager shaderCache;
 
 void cursorPosition(GLFWwindow* window, double x, double y)
 {
@@ -64,11 +67,24 @@ void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int modi
 	}
 }
 
+void reshape(GLFWwindow* window, int width, int height)
+{
+	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height), -1.f, 1.f);
+	glm::mat4 view = glm::lookAt(
+		glm::vec3(0, 0, 1.0f),
+		glm::vec3(0, 0, 0),
+		glm::vec3(0, 1, 0)
+		);
+	glm::mat4 mvp = projection * view;
+	shaderCache.setMVPMatrix(mvp);
+}
+
 int main(int argc, char** argv)
 {
 	if (!glfwInit())
 		return -1;
 
+	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 	auto window = glfwCreateWindow(windowWidth, windowHeight, "FluidSim", nullptr, nullptr);
 
 	if (!window)
@@ -78,6 +94,7 @@ int main(int argc, char** argv)
 	}
 
 	glfwMakeContextCurrent(window);
+	glfwSetWindowSizeCallback(window, reshape);
 	glfwSetCursorPosCallback(window, cursorPosition);
 	glfwSetMouseButtonCallback(window, mouseButtonCallback);
 	glfwSetKeyCallback(window, keyCallback);
@@ -89,15 +106,21 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
+	std::cout << "OpenGL version: " << glGetString(GL_VERSION) << "\n";
+
+	shaderCache.initialise();
+	reshape(window, windowWidth, windowHeight);
+	DrawingPrimitives::init(&shaderCache);
+
 	auto fluid = Simulator::create(windowWidth, windowHeight);
 	fluid->createParticles(particlesX, particlesY);
 	fluid->step();
+	auto renderer = FluidRenderer(windowWidth, windowHeight, scaleFactor, fluid.get());
 
-	float ratio = 0.0f;
 	int width, height;
-
 	size_t frameCount = 0;
 	long long totalTime = 0;
+
 	while (!glfwWindowShouldClose(window))
 	{
 		auto start = std::chrono::high_resolution_clock::now();
@@ -105,45 +128,17 @@ int main(int argc, char** argv)
 		fluid->setMovePos(mouse.x / scaleFactor, mouse.y / scaleFactor);
 		if (addingParticles) fluid->addParticle(Particle(mouse.x / scaleFactor, mouse.y / scaleFactor, 1.0f, 1.0f));
 		fluid->step();
+		
+		glfwGetFramebufferSize(window, &width, &height);
+		auto ratio = width / (float)height;
+		glViewport(0, 0, windowWidth, windowHeight);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+		renderer.render();
+
 		auto end = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-		glfwGetFramebufferSize(window, &width, &height);
-		ratio = width / static_cast<float>(height);
-		glViewport(0, 0, windowWidth, windowHeight);
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		glOrtho(0, width, 0, height, 1.f, -1.f);
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		glColor3f(0.15f, 0.15f, 0.15f);
-		auto grid = fluid->getGrid();
-		float w = width / static_cast<float>(grid.rows());
-		float h = height / static_cast<float>(grid.cols());
-
-		for (size_t y = 0; y < grid.cols(); y++)
-		{
-			for (size_t x = 0; x < grid.rows(); x++)
-			{
-				glm::vec2 p1(x * w, y * h);
-				glm::vec2 p2(p1.x + w, p1.y + h);
-				DrawingPrimitives::drawRectangle(p1, p2);
-			}
-		}
-
-		glColor3f(1.0f, 0.0f, 0.0f);
-		auto particle_count = fluid->particleCount();
-		auto particles = fluid->getParticles();
-		for (size_t i = 0; i < particle_count; ++i)
-		{
-			const auto& particle = particles[i];
-			float x1 = particle.x * scaleFactor;
-			float y1 = height - particle.y * scaleFactor;
-
-			DrawingPrimitives::drawCircle(glm::vec2(x1, y1), particleRadius, 16);
-		}
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -151,6 +146,6 @@ int main(int argc, char** argv)
 		frameCount++;
 	}
 	glfwTerminate();
-	std::cout << "Finished. Average step time: " << totalTime / frameCount << " ms.\n";
+	std::cout << "Finished. Average frame time: " << totalTime / frameCount << " ms.\n";
 	return 0;
 }

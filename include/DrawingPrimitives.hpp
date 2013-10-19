@@ -1,9 +1,15 @@
 #pragma once
 #include <glm\glm.hpp>
+#include "Vertex.hpp"
+#include <vector>
+
+class ShaderManager;
 
 namespace DrawingPrimitives
 {
-	void drawCircle(glm::vec2 center, float r, int segments = 8);
+	// Initializes the drawing functions with the default shaders.
+	void init(const ShaderManager* cache);
+	void drawCircles(const std::vector<Vertex>& midPoints, float radius);
 	void drawRectangle(glm::vec2 p1, glm::vec2 p2);
-	void drawFilledRectangle(glm::vec2 p1, glm::vec2 p2);
+	void drawPoints(const std::vector<Vertex>& points);
 }

@@ -1,6 +1,5 @@
-#include <cmath>
-#include <algorithm>
-#include "fluidsimulator.hpp"
+#include "FluidSimulator.hpp"
+#include <iterator>
 #include <iostream>
 
 void Node::clear()
@@ -329,4 +328,15 @@ void Simulator::setMovePos(float x, float y)
 {
 	mx = x;
 	my = y;
+}
+
+std::vector<glm::vec2> Simulator::getParticlePositions() const
+{
+	std::vector<glm::vec2> positions;
+	positions.reserve(particleCount());
+	std::transform(particles.begin(), particles.end(), std::back_inserter(positions), [](const Particle& p) {
+		return glm::vec2(p.x * 8.0f, p.y * 8.0f);
+	});
+
+	return positions;
 }

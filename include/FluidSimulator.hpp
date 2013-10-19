@@ -4,12 +4,12 @@
 	Original by Grant Kot (https://github.com/kotsoft/)
 */
 
-#include <algorithm>
-#include <memory>
-#include "array2d.hpp"
+#include "Array2d.hpp"
+#include "Particle.hpp"
+#include "Material.hpp"
+#include <glm\glm.hpp>
 #include <random>
-#include "particle.hpp"
-#include "material.hpp"
+#include <memory>
 
 struct Line
 {
@@ -33,7 +33,7 @@ struct Node
 	float v;
 	float ax;
 	float ay;
-	bool   active;
+	bool active;
 
 	Node()
 		: m(0.0f)
@@ -63,6 +63,7 @@ public:
 	void setMovePos(float x, float y);
 
 	std::vector<Particle>& getParticles();
+	std::vector<glm::vec2> getParticlePositions() const;
 	Array2D<Node>& getGrid() { return grid; }
 
 	std::random_device rd;
