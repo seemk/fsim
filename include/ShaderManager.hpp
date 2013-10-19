@@ -1,7 +1,7 @@
 #pragma once
 #include <GL/Program.hpp>
-#include <unordered_map>
 #include <glm/glm.hpp>
+#include <array>
 
 class ShaderManager
 {
@@ -20,5 +20,5 @@ public:
 
 private:
 
-	std::unordered_map<ProgramType, GL::Program> programs;
+	std::array<GL::Program, 2> programs;
 };

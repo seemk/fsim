@@ -21,9 +21,8 @@ void ShaderManager::initialise()
 	programs[ProgramDefault] = GL::Program({ vertexShader, fragmentShader });
 	programs[ProgramPolygon] = GL::Program({ vertexShader, geometryShader, fragmentShader });
 
-	for (auto& kv : programs)
+	for (auto& program : programs)
 	{
-		auto& program = kv.second;
 		program.setMVPUniform(glGetUniformLocation(program.getID(), "mvp"));
 	}
 }
@@ -35,9 +34,8 @@ const GL::Program& ShaderManager::getProgram(ProgramType type) const
 
 void ShaderManager::setMVPMatrix(glm::mat4 mvp)
 {
-	for (auto& kv : programs)
+	for (auto& program : programs)
 	{
-		auto& program = kv.second;
 		auto location = program.getMVPUniform();
 		program.use();
 		glUniformMatrix4fv(location, 1, GL_FALSE, &mvp[0][0]);
