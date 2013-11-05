@@ -12,7 +12,7 @@ std::unique_ptr<Simulator> Simulator::create(int windowWidth, int windowHeight)
 {
 	int sim_w = windowWidth;
 	int sim_h = windowHeight;
-	return std::unique_ptr<Simulator>(new Simulator(sim_w / 8, sim_h / 8));
+	return std::unique_ptr<Simulator>(new Simulator(sim_w, sim_h));
 }
 
 Simulator::Simulator(int gridSizeX, int gridSizeY)
@@ -334,7 +334,7 @@ std::vector<glm::vec2> Simulator::getParticlePositions() const
 	std::vector<glm::vec2> positions;
 	positions.reserve(particleCount());
 	std::transform(particles.begin(), particles.end(), std::back_inserter(positions), [](const Particle& p) {
-		return glm::vec2(p.x * 8.0f, p.y * 8.0f);
+		return glm::vec2(p.x, p.y);
 	});
 
 	return positions;

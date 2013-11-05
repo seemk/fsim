@@ -2,6 +2,7 @@
 #include <GL/glew.h>
 #include <GL/Shader.hpp>
 #include <memory>
+#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
 namespace GL
@@ -9,6 +10,7 @@ namespace GL
 
 	Program::Program()
 		: program(0)
+		, sharedUniformsBlockIndex(GL_INVALID_INDEX)
 	{
 
 	}
@@ -59,6 +61,16 @@ namespace GL
 		}
 	}
 
+	void Program::setSharedUniformBlockIndex(const std::string& uniformBlockName)
+	{
+		sharedUniformsBlockIndex = glGetUniformBlockIndex(program, uniformBlockName.c_str());
+	}
+
+	GLuint Program::getSharedUniformBlockIndex() const
+	{
+		return sharedUniformsBlockIndex;
+	}
+
 	void Program::destroy()
 	{
 		glDeleteProgram(program);
@@ -94,13 +106,13 @@ namespace GL
 		return std::make_shared<Program>(shaders);
 	}
 
-	void Program::setMVPUniform(GLuint location)
+	GLuint Program::getUniformLocation(const std::string& location) const
 	{
-		mvpUniformLocation = location;
+		return glGetUniformLocation(program, location.data());
 	}
 
-	GLuint Program::getMVPUniform() const
+	void Program::setUniformValue(GLuint location, const glm::vec4& vector) const
 	{
-		return mvpUniformLocation;
+		glUniform4fv(location, 1, glm::value_ptr(vector));
 	}
 }

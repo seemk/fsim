@@ -1,14 +1,19 @@
 #version 330
 
+layout(std140) uniform DefaultUniforms
+{
+	mat4 MVP;
+};
+
 layout(location = 0) in vec2 pos;
-layout(location = 1) in vec3 color;
 
-uniform mat4 mvp;
+out vec4 vertexColor;
 
-out vec3 vertexColor;
+uniform vec4 color;
 
 void main()
 {
-	gl_Position = mvp * vec4(pos, 0.0, 1.0);
+	gl_Position = MVP * vec4(pos, 0.0, 1.0);
     vertexColor = color;
 }
+

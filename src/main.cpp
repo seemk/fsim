@@ -3,7 +3,7 @@
 #include <glm/ext.hpp>
 #include "FluidSimulator.hpp"
 #include "FluidRenderer.hpp"
-#include "DrawingPrimitives.hpp"
+#include "Drawing.hpp"
 #include "ShaderManager.hpp"
 #include <chrono>
 #include <iostream>
@@ -18,14 +18,15 @@ struct Mouse
 Mouse mouse = { 0.0f, 0.0f, false };
 const int windowWidth	= 1280;
 const int windowHeight	= 720;
-const int particlesX	= 100;
-const int particlesY	= 100;
+const int particlesX	= 50;
+const int particlesY	= 50;
+const float particleIncrement = 2.0f;
 
 bool addingParticles	= false;
 float scaleFactor		= 8.f;
-float particleRadius	= 10.f;
 
 static ShaderManager shaderCache;
+static std::unique_ptr<FluidRenderer> renderer;
 
 void cursorPosition(GLFWwindow* window, double x, double y)
 {
@@ -53,14 +54,35 @@ void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int modi
 	switch (key)
 	{
 	case GLFW_KEY_Q:
-		if (particleRadius >= 2.0f) particleRadius -= 1.0f;
+		{
+			
+			float currentRadius = renderer->getParticleRadius();
+			if (currentRadius > particleIncrement)
+			{
+				renderer->setParticleRadius(currentRadius - particleIncrement);
+			}
+		}
 		break;
 	case GLFW_KEY_W:
-		particleRadius += 1.0f;
+		renderer->setParticleRadius(renderer->getParticleRadius() + particleIncrement);
 		break;
 	case GLFW_KEY_A:
 		if (action == GLFW_PRESS) addingParticles = true;
 		else if (action == GLFW_RELEASE) addingParticles = false;
+		break;
+	case GLFW_KEY_E:
+		{
+			auto currentSize = renderer->getRenderGridSize();
+			if (currentSize > 1)
+			{
+				renderer->setRenderGridSize(renderer->getRenderGridSize() - 1);
+			}
+		}
+		break;
+	case GLFW_KEY_R:
+		{
+			renderer->setRenderGridSize(renderer->getRenderGridSize() + 1);
+		}
 		break;
 	default:
 		break;
@@ -69,11 +91,11 @@ void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int modi
 
 void reshape(GLFWwindow* window, int width, int height)
 {
-	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height), -1.f, 1.f);
+	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, -1.f, 1.f);
 	glm::mat4 view = glm::lookAt(
 		glm::vec3(0, 0, 1.0f),
 		glm::vec3(0, 0, 0),
-		glm::vec3(0, 1, 0)
+		glm::vec3(0, 1.f, 0)
 		);
 	glm::mat4 mvp = projection * view;
 	shaderCache.setMVPMatrix(mvp);
@@ -110,13 +132,14 @@ int main(int argc, char** argv)
 
 	shaderCache.initialise();
 	reshape(window, windowWidth, windowHeight);
-	DrawingPrimitives::init(&shaderCache);
-
-	auto fluid = Simulator::create(windowWidth, windowHeight);
+	Drawing::init(&shaderCache);
+	int scale = static_cast<int>(scaleFactor);
+	auto fluid = Simulator::create(windowWidth / scale, windowHeight / scale);
 	fluid->createParticles(particlesX, particlesY);
 	fluid->step();
-	auto renderer = FluidRenderer(windowWidth, windowHeight, scaleFactor, fluid.get());
-
+	float particleRadius = 20.f;
+	renderer.reset(new FluidRenderer(windowWidth, windowHeight, scaleFactor, particleRadius, fluid.get(), &shaderCache));
+	renderer->enableGrid(true);
 	int width, height;
 	size_t frameCount = 0;
 	long long totalTime = 0;
@@ -135,7 +158,7 @@ int main(int argc, char** argv)
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-		renderer.render();
+		renderer->render();
 
 		auto end = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);

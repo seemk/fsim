@@ -3,6 +3,7 @@
 #include <memory>
 #include <initializer_list>
 #include <GL/glew.h>
+#include <glm/glm.hpp>
 
 namespace GL
 {
@@ -17,19 +18,24 @@ namespace GL
 
 		static std::shared_ptr<Program> create(const std::vector<Shader>& shaders);
 
-		GLuint getMVPUniform() const;
-		void setMVPUniform(GLuint location);
+		void setSharedUniformBlockIndex(const std::string& uniformBlockName);
+		GLuint getSharedUniformBlockIndex() const;
+
+		GLuint getUniformLocation(const std::string& location) const;
+
+		void setUniformValue(GLuint location, const glm::vec4& vector) const;
+
 		void destroy();
 		bool initialized() const;
 		void use() const;
+		inline void unuse() const { glUseProgram(0); }
 		std::string getInfo() const;
 		GLuint getID() const;
 
 
 	private:
-		
-		GLuint mvpUniformLocation;
-		GLuint program;
 
+		GLuint program;
+		GLuint sharedUniformsBlockIndex;
 	};
 }

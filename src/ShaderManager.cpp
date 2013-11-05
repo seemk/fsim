@@ -1,7 +1,15 @@
 #include "ShaderManager.hpp"
 #include "Util.hpp"
 #include <GL/Shader.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <string>
+#include <iostream>
+
+ShaderManager::ShaderManager()
+: sharedUniformsBindingIndex(0)
+{
+
+}
 
 void ShaderManager::useProgram(ProgramType type) const
 {
@@ -11,20 +19,25 @@ void ShaderManager::useProgram(ProgramType type) const
 void ShaderManager::initialise()
 {
 	std::string vertexShaderStr = util::getFileContent("shaders/vertex.glsl");
-	std::string geometryShaderStr = util::getFileContent("shaders/geometry.glsl");
 	std::string fragmentShaderStr = util::getFileContent("shaders/fragment.glsl");
 
 	auto vertexShader = GL::Shader::create(GL::Shader::Type::Vertex, vertexShaderStr);
-	auto geometryShader = GL::Shader::create(GL::Shader::Type::Geometry, geometryShaderStr);
 	auto fragmentShader = GL::Shader::create(GL::Shader::Type::Fragment, fragmentShaderStr);
-	
-	programs[ProgramDefault] = GL::Program({ vertexShader, fragmentShader });
-	programs[ProgramPolygon] = GL::Program({ vertexShader, geometryShader, fragmentShader });
 
-	for (auto& program : programs)
+	programs[ProgramDefault] = GL::Program({ vertexShader, fragmentShader });
+
+	for (auto& pgm : programs)
 	{
-		program.setMVPUniform(glGetUniformLocation(program.getID(), "mvp"));
+		glUniformBlockBinding(pgm.getID(), pgm.getSharedUniformBlockIndex(), sharedUniformsBindingIndex);
 	}
+
+	glGenBuffers(1, &sharedUniformsBufferObject);
+	glBindBuffer(GL_UNIFORM_BUFFER, sharedUniformsBufferObject);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), nullptr, GL_STREAM_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	glBindBufferRange(GL_UNIFORM_BUFFER, sharedUniformsBindingIndex, sharedUniformsBufferObject, 0, sizeof(glm::mat4));
+
 }
 
 const GL::Program& ShaderManager::getProgram(ProgramType type) const
@@ -34,11 +47,13 @@ const GL::Program& ShaderManager::getProgram(ProgramType type) const
 
 void ShaderManager::setMVPMatrix(glm::mat4 mvp)
 {
-	for (auto& program : programs)
-	{
-		auto location = program.getMVPUniform();
-		program.use();
-		glUniformMatrix4fv(location, 1, GL_FALSE, &mvp[0][0]);
-		glUseProgram(0);
-	}
+	mvpMatrix = mvp;
+	glBindBuffer(GL_UNIFORM_BUFFER, sharedUniformsBufferObject);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(mvp));
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+glm::mat4 ShaderManager::getMVPMatrix() const
+{
+	return mvpMatrix;
 }
