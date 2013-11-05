@@ -18,8 +18,6 @@ public:
 	void updatePositions();
 	void setParticleRadius(float radius);
 	float getParticleRadius() const;
-	void setRenderGridSize(size_t size);
-	size_t getRenderGridSize() const;
 	void enableGrid(bool enable);
 
 private:
@@ -33,7 +31,6 @@ private:
 	float height;
 	float scale;
 	float particleRadius;
-	size_t renderGridSize;
 	bool gridEnabled;
 
 	std::vector<glm::vec2> particleVertices;

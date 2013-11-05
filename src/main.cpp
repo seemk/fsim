@@ -72,16 +72,14 @@ void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int modi
 		break;
 	case GLFW_KEY_E:
 		{
-			auto currentSize = renderer->getRenderGridSize();
-			if (currentSize > 1)
-			{
-				renderer->setRenderGridSize(renderer->getRenderGridSize() - 1);
-			}
+			// Decrease generator's grid size
+			// TODO
 		}
 		break;
 	case GLFW_KEY_R:
 		{
-			renderer->setRenderGridSize(renderer->getRenderGridSize() + 1);
+			// Increase generator's grid size
+			// TODO
 		}
 		break;
 	default:
@@ -137,7 +135,7 @@ int main(int argc, char** argv)
 	auto fluid = Simulator::create(windowWidth / scale, windowHeight / scale);
 	fluid->createParticles(particlesX, particlesY);
 	fluid->step();
-	float particleRadius = 20.f;
+	float particleRadius = 10.f;
 	renderer.reset(new FluidRenderer(windowWidth, windowHeight, scaleFactor, particleRadius, fluid.get(), &shaderCache));
 	renderer->enableGrid(true);
 	int width, height;

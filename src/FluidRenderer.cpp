@@ -11,7 +11,6 @@ FluidRenderer::FluidRenderer(int windowWidth, int windowHeight, float scaleFacto
 	, height(static_cast<float>(windowHeight))
 	, scale(scaleFactor)
 	, particleRadius(particleRadius)
-	, renderGridSize(50)
 	, gridEnabled(false)
 	, particleVertices(simulator->getParticles().size())
 {
@@ -40,8 +39,13 @@ void FluidRenderer::render()
 void FluidRenderer::drawGrid()
 {
 	auto grid = fluidSimulator->getGrid();
-	Drawing::drawGrid(glm::vec2(0.0f, 0.0f), glm::vec2(width, height), renderGridSize,
-		static_cast<size_t>(renderGridSize * width / height));
+
+	auto rows = grid.rows();
+	auto cols = grid.cols();
+	auto width = rows * scale;
+	auto height = cols * scale;
+	Drawing::drawGrid(glm::vec2(0.0f, 0.0f), glm::vec2(width, height), cols, rows);
+
 }
 
 void FluidRenderer::updatePositions()
@@ -63,14 +67,4 @@ void FluidRenderer::enableGrid(bool enable)
 float FluidRenderer::getParticleRadius() const
 {
 	return particleRadius;
-}
-
-void FluidRenderer::setRenderGridSize(size_t size)
-{
-	renderGridSize = size;
-}
-
-size_t FluidRenderer::getRenderGridSize() const
-{
-	return renderGridSize;
 }
