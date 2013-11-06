@@ -27,8 +27,8 @@ namespace GL
 
 		void destroy();
 		bool initialized() const;
-		void use() const;
-		inline void unuse() const { glUseProgram(0); }
+		void use() const { glUseProgram(program); }
+		void unuse() const { glUseProgram(0); }
 		std::string getInfo() const;
 		GLuint getID() const;
 

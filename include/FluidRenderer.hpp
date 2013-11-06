@@ -1,7 +1,5 @@
 #pragma once
-#include "Vertex.hpp"
-#include <vector>
-#include <glm/glm.hpp>
+#include "GeometryGenerator.hpp"
 
 class Simulator;
 class ShaderManager;
@@ -26,6 +24,8 @@ private:
 
 	Simulator* fluidSimulator;
 	ShaderManager* shaderCache;
+
+	GeometryGenerator geometryGen;
 
 	float width;
 	float height;

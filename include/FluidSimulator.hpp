@@ -11,16 +11,6 @@
 #include <random>
 #include <memory>
 
-struct Line
-{
-	float x1, y1;
-	float x2, y2;
-
-	unsigned char r;
-	unsigned char g;
-	unsigned char b;
-};
-
 struct Node
 {
 	void clear();

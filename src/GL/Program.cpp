@@ -91,11 +91,6 @@ namespace GL
 		return program;
 	}
 
-	void Program::use() const
-	{
-		glUseProgram(program);
-	}
-
 	bool Program::initialized() const
 	{
 		return program != 0;

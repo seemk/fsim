@@ -18,8 +18,8 @@ struct Mouse
 Mouse mouse = { 0.0f, 0.0f, false };
 const int windowWidth	= 1280;
 const int windowHeight	= 720;
-const int particlesX	= 50;
-const int particlesY	= 50;
+const int particlesX	= 20;
+const int particlesY	= 20;
 const float particleIncrement = 2.0f;
 
 bool addingParticles	= false;
@@ -137,7 +137,7 @@ int main(int argc, char** argv)
 	fluid->step();
 	float particleRadius = 10.f;
 	renderer.reset(new FluidRenderer(windowWidth, windowHeight, scaleFactor, particleRadius, fluid.get(), &shaderCache));
-	renderer->enableGrid(true);
+	renderer->enableGrid(false);
 	int width, height;
 	size_t frameCount = 0;
 	long long totalTime = 0;

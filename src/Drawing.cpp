@@ -115,6 +115,22 @@ namespace Drawing
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
+	void drawLines(const std::vector<Line>& lines)
+	{
+		const size_t vertices = 2 * lines.size();
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * vertices, &lines[0]);
+
+		auto program = shaderCache->getProgram(ShaderManager::ProgramDefault);
+		program.use();
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), 0);
+		glDrawArrays(GL_LINES, 0, vertices);
+		glDisableVertexAttribArray(0);
+		glUseProgram(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+
 	void setColor(glm::vec4 color)
 	{
 		auto pgm = shaderCache->getProgram(ShaderManager::ProgramDefault);

@@ -7,6 +7,7 @@ FluidRenderer::FluidRenderer(int windowWidth, int windowHeight, float scaleFacto
 						float particleRadius, Simulator* simulator, ShaderManager* cache)
 	: fluidSimulator(simulator)
 	, shaderCache(cache)
+	, geometryGen(Grid(80, 45, 1280.f, 720.f), 20.f)
 	, width(static_cast<float>(windowWidth))
 	, height(static_cast<float>(windowHeight))
 	, scale(scaleFactor)
@@ -33,7 +34,17 @@ void FluidRenderer::render()
 
 	Drawing::setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 	Drawing::drawPoints(particleVertices);
-	Drawing::drawCircles(particleVertices, particleRadius, 12);
+	Drawing::drawCircles(particleVertices, particleRadius, 36);
+
+	const auto& grid = geometryGen.getGrid();
+	Drawing::setColor(glm::vec4(0.2f, 0.2f, 0.2f, 0.25f));
+	Drawing::drawGrid(glm::vec2(0.0f, 0.0f), grid.size(), grid.cols(), grid.rows());
+
+	geometryGen.findInterSectionPoints(particleVertices, particleRadius);
+	Drawing::setColor(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+	glPointSize(2.0f);
+	Drawing::drawPoints(geometryGen.getIntersectionPoints());
+
 }
 
 void FluidRenderer::drawGrid()
