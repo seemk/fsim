@@ -16,6 +16,7 @@ void main() {
     for (int i = 0; i <= vertices; i++)
     {
         float ang = PI * 2.0 / vertices * i;
+        //vec4 offset = radius * 0.0025 * vec4(sin(ang) * 0.3, cos(ang) * 0.4, 0.0, 0.0);
         vec4 offset = mvMat[0] * vec4(radius * sin(ang), radius * cos(ang), 0.0, 0.0);
         gl_Position = gl_in[0].gl_Position + offset;
         EmitVertex();

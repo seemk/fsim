@@ -6,20 +6,14 @@ typedef glm::vec2 Point;
 
 struct Line
 {
-	glm::vec2 start;
-	glm::vec2 end;
+	Point start;
+	Point end;
 };
 
 struct Circle
 {
-	glm::vec2 center;
+	Point center;
 	float radius;
-};
-
-struct Vertex
-{
-	GLfloat position[2];
-	GLfloat color[3];
 };
 
 class Grid

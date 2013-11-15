@@ -7,7 +7,6 @@
 
 namespace GL
 {
-
 	Program::Program()
 		: program(0)
 		, sharedUniformsBlockIndex(GL_INVALID_INDEX)
@@ -101,13 +100,25 @@ namespace GL
 		return std::make_shared<Program>(shaders);
 	}
 
-	GLuint Program::getUniformLocation(const std::string& location) const
+	GLint Program::getUniformLocation(const std::string& location) const
 	{
 		return glGetUniformLocation(program, location.data());
 	}
 
-	void Program::setUniformValue(GLuint location, const glm::vec4& vector) const
+	void Program::setUniformValue(GLint location, const glm::vec4& vector) const
 	{
 		glUniform4fv(location, 1, glm::value_ptr(vector));
+	}
+
+	void Program::setUniformValue(GLint location, GLint value) const
+	{
+		glUniform1i(location, value);
+	}
+
+	GLint Program::activeUniformCount() const
+	{
+		GLint count;
+		glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &count);
+		return count;
 	}
 }

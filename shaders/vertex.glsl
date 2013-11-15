@@ -13,7 +13,7 @@ uniform vec4 color;
 
 void main()
 {
-	gl_Position = MVP * vec4(pos, 0.0, 1.0);
     vertexColor = color;
+    gl_Position = MVP * vec4(pos, 0.0, 1.0);
 }
 

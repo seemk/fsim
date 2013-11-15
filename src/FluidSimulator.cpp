@@ -1,6 +1,5 @@
 #include "FluidSimulator.hpp"
 #include <iterator>
-#include <iostream>
 
 void Node::clear()
 {
@@ -44,7 +43,6 @@ void Simulator::createParticles(size_t countX, size_t countY)
 			particles.push_back(particle);
 		}
 	}
-	std::cout << "Created " << particles.size() << " particles.\n";
 }
 
 void Simulator::addParticle(const Particle& p)

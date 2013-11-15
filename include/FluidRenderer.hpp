@@ -1,5 +1,6 @@
 #pragma once
-#include "GeometryGenerator.hpp"
+#include <Geometry.hpp>
+#include <vector>
 
 class Simulator;
 class ShaderManager;
@@ -24,8 +25,6 @@ private:
 
 	Simulator* fluidSimulator;
 	ShaderManager* shaderCache;
-
-	GeometryGenerator geometryGen;
 
 	float width;
 	float height;

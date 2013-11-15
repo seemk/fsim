@@ -18,8 +18,8 @@ struct Mouse
 Mouse mouse = { 0.0f, 0.0f, false };
 const int windowWidth	= 1280;
 const int windowHeight	= 720;
-const int particlesX	= 20;
-const int particlesY	= 20;
+const int particlesX	= 100;
+const int particlesY	= 50;
 const float particleIncrement = 2.0f;
 
 bool addingParticles	= false;
@@ -69,18 +69,6 @@ void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int modi
 	case GLFW_KEY_A:
 		if (action == GLFW_PRESS) addingParticles = true;
 		else if (action == GLFW_RELEASE) addingParticles = false;
-		break;
-	case GLFW_KEY_E:
-		{
-			// Decrease generator's grid size
-			// TODO
-		}
-		break;
-	case GLFW_KEY_R:
-		{
-			// Increase generator's grid size
-			// TODO
-		}
 		break;
 	default:
 		break;
@@ -135,7 +123,7 @@ int main(int argc, char** argv)
 	auto fluid = Simulator::create(windowWidth / scale, windowHeight / scale);
 	fluid->createParticles(particlesX, particlesY);
 	fluid->step();
-	float particleRadius = 10.f;
+	float particleRadius = 14.f;
 	renderer.reset(new FluidRenderer(windowWidth, windowHeight, scaleFactor, particleRadius, fluid.get(), &shaderCache));
 	renderer->enableGrid(false);
 	int width, height;

@@ -11,7 +11,7 @@ ShaderManager::ShaderManager()
 
 }
 
-void ShaderManager::useProgram(ProgramType type) const
+void ShaderManager::useProgram(GL::ProgramType type) const
 {
 	programs.at(type).use();
 }
@@ -20,11 +20,16 @@ void ShaderManager::initialise()
 {
 	std::string vertexShaderStr = util::getFileContent("shaders/vertex.glsl");
 	std::string fragmentShaderStr = util::getFileContent("shaders/fragment.glsl");
+	std::string blurShaderVertexStr = util::getFileContent("shaders/fb_blur_vertex.glsl");
+	std::string blurShaderFragStr = util::getFileContent("shaders/fb_blur_fragment.glsl");
 
 	auto vertexShader = GL::Shader::create(GL::Shader::Type::Vertex, vertexShaderStr);
 	auto fragmentShader = GL::Shader::create(GL::Shader::Type::Fragment, fragmentShaderStr);
+	auto blurShaderVertex = GL::Shader::create(GL::Shader::Type::Vertex, blurShaderVertexStr);
+	auto blurShaderFrag = GL::Shader::create(GL::Shader::Type::Fragment, blurShaderFragStr);
 
-	programs[ProgramDefault] = GL::Program({ vertexShader, fragmentShader });
+	programs[GL::ProgramType::Default] = GL::Program({ vertexShader, fragmentShader });
+	programs[GL::ProgramType::Blur] = GL::Program({ blurShaderVertex, blurShaderFrag });
 
 	for (auto& pgm : programs)
 	{
@@ -40,7 +45,7 @@ void ShaderManager::initialise()
 
 }
 
-const GL::Program& ShaderManager::getProgram(ProgramType type) const
+const GL::Program& ShaderManager::getProgram(GL::ProgramType type) const
 {
 	return programs.at(type);
 }

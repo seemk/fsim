@@ -12,25 +12,71 @@ namespace Drawing
 	// Preallocates bufferSize * 2 * 4 bytes
 	std::array<glm::vec2, bufferSize> drawBuffer;
 	GLuint vertexBufferHandle;
+	GLuint frameBufferHandle;
+	GLuint vertexAttribObject;
+	GLuint textureColorLocation;
+	GLuint screenVAO;
+	GLuint screenVBO;
 
+	GLfloat screenQuad[] = 
+	{
+		-1.0f, 1.0f, 0.0f, 1.0f,
+		1.0f, 1.0f, 1.0f, 1.0f,
+		1.0f, -1.0f, 1.0f, 0.0f,
+
+		1.0f, -1.0f, 1.0f, 0.0f,
+		-1.0f, -1.0f, 0.0f, 0.0f,
+		-1.0f, 1.0f, 0.0f, 1.0f
+	};
 
 	void init(const ShaderManager* cache)
 	{
 		shaderCache = cache;
-		colorLocation = shaderCache->getProgram(ShaderManager::ProgramDefault).getUniformLocation("color");
-		GLuint vertexAttribObject;
+		auto pgm = shaderCache->getProgram(GL::ProgramType::Default);
+		pgm.use();
+		colorLocation = pgm.getUniformLocation("color");
+		pgm.unuse();
+
 		glGenVertexArrays(1, &vertexAttribObject);
 		glBindVertexArray(vertexAttribObject);
-
 		glGenBuffers(1, &vertexBufferHandle);
+
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
 		glBufferData(GL_ARRAY_BUFFER, bufferSize * sizeof(float), nullptr, GL_STREAM_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glGenVertexArrays(1, &screenVAO);
+		glBindVertexArray(screenVAO);
+		glGenBuffers(1, &screenVBO);
+
+		glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(screenQuad), screenQuad, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		auto blurProgram = shaderCache->getProgram(GL::ProgramType::Default);
+		blurProgram.use();
+		auto loc = blurProgram.getUniformLocation("texFrameBuf");
+		blurProgram.setUniformValue(loc, 0);
+		blurProgram.unuse();
+
+		glGenFramebuffers(1, &frameBufferHandle);
+		glBindFramebuffer(GL_FRAMEBUFFER, frameBufferHandle);
+
+		glGenTextures(1, &textureColorLocation);
+		glBindTexture(GL_TEXTURE_2D, textureColorLocation);
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1280, 720, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorLocation, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 	void drawPoints(const std::vector<glm::vec2>& points)
 	{
-		auto program = shaderCache->getProgram(ShaderManager::ProgramDefault);
+		auto program = shaderCache->getProgram(GL::ProgramType::Default);
 
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * points.size(), &points[0]);
@@ -75,7 +121,7 @@ namespace Drawing
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * bufferElements, &drawBuffer[0]);
 		
-		auto program = shaderCache->getProgram(ShaderManager::ProgramDefault);
+		auto program = shaderCache->getProgram(GL::ProgramType::Default);
 		program.use();
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), 0);
@@ -85,8 +131,9 @@ namespace Drawing
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	void drawCircles(const std::vector<glm::vec2>& midPoints, float radius, int segments)
+	void drawCircles(const std::vector<glm::vec2>& midPoints, float radius, int segments, bool filled)
 	{
+
 		size_t pointCount = 0;
 		float segmentCount = static_cast<float>(segments);
 		for (const auto& p : midPoints)
@@ -98,20 +145,44 @@ namespace Drawing
 					p.y + radius * glm::sin(theta));
 			}
 		}
-
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, frameBufferHandle);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		auto drawMode = filled ? GL_POLYGON : GL_LINE_LOOP;
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * pointCount, &drawBuffer[0]);
-		
-		auto program = shaderCache->getProgram(ShaderManager::ProgramDefault);
+
+		auto program = shaderCache->getProgram(GL::ProgramType::Default);
 		program.use();
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
 		for (size_t i = 0; i < midPoints.size(); ++i)
 		{
-			glDrawArrays(GL_LINE_LOOP, i*segments, segments);
+			glDrawArrays(drawMode, i*segments, segments);
 		}
 		glDisableVertexAttribArray(0);
 		program.unuse();
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(screenVBO), screenQuad);
+
+		auto blurPgm = shaderCache->getProgram(GL::ProgramType::Blur);
+		blurPgm.use();
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureColorLocation);
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), nullptr);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(1);
+		blurPgm.unuse();
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
@@ -121,7 +192,7 @@ namespace Drawing
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * vertices, &lines[0]);
 
-		auto program = shaderCache->getProgram(ShaderManager::ProgramDefault);
+		auto program = shaderCache->getProgram(GL::ProgramType::Default);
 		program.use();
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), 0);
@@ -133,9 +204,34 @@ namespace Drawing
 
 	void setColor(glm::vec4 color)
 	{
-		auto pgm = shaderCache->getProgram(ShaderManager::ProgramDefault);
+		auto pgm = shaderCache->getProgram(GL::ProgramType::Default);
 		pgm.use();
 		pgm.setUniformValue(colorLocation, color);
+		pgm.unuse();
+	}
+
+	void drawBox(const Point& bottomLeft, const Point& topRight)
+	{
+		const size_t segments = 4;
+		auto size = topRight - bottomLeft;
+
+		drawBuffer[0] = bottomLeft;
+		drawBuffer[1] = Point(bottomLeft.x + size.x, bottomLeft.y);
+		drawBuffer[2] = topRight;
+		drawBuffer[3] = Point(bottomLeft.x, bottomLeft.y + size.y);
+
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * segments, &drawBuffer[0]);
+
+		auto pgm = shaderCache->getProgram(GL::ProgramType::Default);
+		pgm.use();
+
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
+		glDrawArrays(GL_LINE_LOOP, 0, segments);
+		glDisableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 		pgm.unuse();
 	}
 

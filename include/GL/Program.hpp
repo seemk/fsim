@@ -8,6 +8,13 @@
 namespace GL
 {
 	class Shader;
+
+	enum ProgramType
+	{
+		Default, // The default shader which just colours the vertices
+		Blur
+	};
+
 	class Program
 	{
 	public:
@@ -21,9 +28,11 @@ namespace GL
 		void setSharedUniformBlockIndex(const std::string& uniformBlockName);
 		GLuint getSharedUniformBlockIndex() const;
 
-		GLuint getUniformLocation(const std::string& location) const;
+		GLint getUniformLocation(const std::string& location) const;
+		GLint activeUniformCount() const;
 
-		void setUniformValue(GLuint location, const glm::vec4& vector) const;
+		void setUniformValue(GLint location, const glm::vec4& vector) const;
+		void setUniformValue(GLint location, GLint value) const;
 
 		void destroy();
 		bool initialized() const;
