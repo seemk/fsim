@@ -5,8 +5,15 @@
 #include "FluidRenderer.hpp"
 #include "Drawing.hpp"
 #include "ShaderManager.hpp"
+#include "AtoDemo.hpp"
 #include <chrono>
 #include <iostream>
+
+enum Demo : int
+{
+	AtoMorph,
+	Fluid
+};
 
 struct Mouse
 {
@@ -21,6 +28,8 @@ const int windowHeight	= 720;
 const int particlesX	= 100;
 const int particlesY	= 50;
 const float particleIncrement = 2.0f;
+const int demoCount = 2;
+int currentDemo = Fluid;
 
 bool addingParticles	= false;
 float scaleFactor		= 8.f;
@@ -49,26 +58,37 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 	}
 }
 
+void switchDemo()
+{
+	++currentDemo;
+	currentDemo = currentDemo % demoCount;
+}
+
 void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int modifier)
 {
 	switch (key)
 	{
 	case GLFW_KEY_Q:
+	{
+		if (action == GLFW_RELEASE)
 		{
-			
 			float currentRadius = renderer->getParticleRadius();
 			if (currentRadius > particleIncrement)
 			{
 				renderer->setParticleRadius(currentRadius - particleIncrement);
 			}
 		}
+	}
 		break;
 	case GLFW_KEY_W:
-		renderer->setParticleRadius(renderer->getParticleRadius() + particleIncrement);
+		if (action == GLFW_RELEASE) renderer->setParticleRadius(renderer->getParticleRadius() + particleIncrement);
 		break;
 	case GLFW_KEY_A:
 		if (action == GLFW_PRESS) addingParticles = true;
 		else if (action == GLFW_RELEASE) addingParticles = false;
+		break;
+	case GLFW_KEY_SPACE:
+		if (action == GLFW_RELEASE) switchDemo();
 		break;
 	default:
 		break;
@@ -123,28 +143,48 @@ int main(int argc, char** argv)
 	auto fluid = Simulator::create(windowWidth / scale, windowHeight / scale);
 	fluid->createParticles(particlesX, particlesY);
 	fluid->step();
-	float particleRadius = 14.f;
+	float particleRadius = 16.f;
 	renderer.reset(new FluidRenderer(windowWidth, windowHeight, scaleFactor, particleRadius, fluid.get(), &shaderCache));
 	renderer->enableGrid(false);
 	int width, height;
 	size_t frameCount = 0;
 	long long totalTime = 0;
 
+	AtoDemo atoDemo(1);
+	atoDemo.pause();
+
 	while (!glfwWindowShouldClose(window))
 	{
 		auto start = std::chrono::high_resolution_clock::now();
-		fluid->setDrag(mouse.pressed);
-		fluid->setMovePos(mouse.x / scaleFactor, mouse.y / scaleFactor);
-		if (addingParticles) fluid->addParticle(Particle(mouse.x / scaleFactor, mouse.y / scaleFactor, 1.0f, 1.0f));
-		fluid->step();
-		
+
 		glfwGetFramebufferSize(window, &width, &height);
 		auto ratio = width / (float)height;
 		glViewport(0, 0, windowWidth, windowHeight);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-		renderer->render();
+		switch (currentDemo)
+		{
+		case AtoMorph:
+		{
+			if (atoDemo.paused) atoDemo.resume();
+			atoDemo.update();
+			atoDemo.drawScene();
+		}
+			break;
+		case Fluid:
+		{
+			if (!atoDemo.paused) atoDemo.pause();
+			fluid->setDrag(mouse.pressed);
+			fluid->setMovePos(mouse.x / scaleFactor, mouse.y / scaleFactor);
+			if (addingParticles) fluid->addParticle(Particle(mouse.x / scaleFactor, mouse.y / scaleFactor, 1.0f, 1.0f));
+			fluid->step();
+			renderer->render();
+		}
+			break;
+		default:
+			break;
+		}
 
 		auto end = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);

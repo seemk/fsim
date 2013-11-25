@@ -1,5 +1,4 @@
 #include "GL/Shader.hpp"
-#include <memory>
 #include <iostream>
 
 namespace GL

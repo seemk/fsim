@@ -1554,7 +1554,7 @@ static uint8 *load_jpeg_image(jpeg *z, int *out_x, int *out_y, int *comp, int re
 				uint8 *y = coutput[0];
 				if (z->s->img_n == 3) {
 #ifdef STBI_SIMD
-					stbi_YCbCr_installed(out, y, coutput[1], coutput[2], z->s.img_x, n);
+					stbi_YCbCr_installed(out, y, coutput[1], coutput[2], z->s->img_x, n);
 #else
 					YCbCr_to_RGB_row(out, y, coutput[1], coutput[2], z->s->img_x, n);
 #endif

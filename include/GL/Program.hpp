@@ -12,7 +12,11 @@ namespace GL
 	enum ProgramType
 	{
 		Default, // The default shader which just colours the vertices
-		Blur
+		ColorDefault,
+		ColorCircles, // Same as ColorDefault, but uses a geometry shader to generate them.
+		Blur,
+
+		COUNT
 	};
 
 	class Program

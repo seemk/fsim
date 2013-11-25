@@ -3,20 +3,19 @@
 layout(points) in;
 layout(line_strip, max_vertices = 33) out;
 
-in vec3 vertexColor[];
+in vec4 vertexColor[];
 in mat4 mvMat[];
-uniform float radius;
-out vec3 geometryVertexColor;
+const float radius = 5;
+out vec4 fColor;
 
 const float PI = 3.1415926;
 
 void main() {
-    geometryVertexColor = vertexColor[0];
+    fColor = vertexColor[0];
     float vertices = 16.0;
     for (int i = 0; i <= vertices; i++)
     {
         float ang = PI * 2.0 / vertices * i;
-        //vec4 offset = radius * 0.0025 * vec4(sin(ang) * 0.3, cos(ang) * 0.4, 0.0, 0.0);
         vec4 offset = mvMat[0] * vec4(radius * sin(ang), radius * cos(ang), 0.0, 0.0);
         gl_Position = gl_in[0].gl_Position + offset;
         EmitVertex();

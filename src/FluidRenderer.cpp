@@ -32,7 +32,7 @@ void FluidRenderer::render()
 	}
 
 	Drawing::setColor(glm::vec4(0.1f, 0.3f, 1.0f, 1.0f));
-	Drawing::drawCircles(particleVertices, particleRadius, 24, true);
+	Drawing::drawBlobs(particleVertices, particleRadius, 18);
 
 }
 

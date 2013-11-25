@@ -7,10 +7,10 @@ namespace Drawing
 {
 
 	const ShaderManager* shaderCache = nullptr;
-	const size_t bufferSize = 512000;
+	const size_t bufferSize = 512000 * 4;
 	GLuint colorLocation = 0;
-	// Preallocates bufferSize * 2 * 4 bytes
 	std::array<glm::vec2, bufferSize> drawBuffer;
+	std::array<Vertex, bufferSize> vertexBuffer;
 	GLuint vertexBufferHandle;
 	GLuint frameBufferHandle;
 	GLuint vertexAttribObject;
@@ -131,7 +131,7 @@ namespace Drawing
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	void drawCircles(const std::vector<glm::vec2>& midPoints, float radius, int segments, bool filled)
+	void drawBlobs(const std::vector<glm::vec2>& midPoints, float radius, int segments)
 	{
 
 		size_t pointCount = 0;
@@ -149,7 +149,6 @@ namespace Drawing
 		glBindFramebuffer(GL_FRAMEBUFFER, frameBufferHandle);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		auto drawMode = filled ? GL_POLYGON : GL_LINE_LOOP;
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * pointCount, &drawBuffer[0]);
 
@@ -159,7 +158,7 @@ namespace Drawing
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
 		for (size_t i = 0; i < midPoints.size(); ++i)
 		{
-			glDrawArrays(drawMode, i*segments, segments);
+			glDrawArrays(GL_POLYGON, i*segments, segments);
 		}
 		glDisableVertexAttribArray(0);
 		program.unuse();
@@ -233,6 +232,67 @@ namespace Drawing
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 		pgm.unuse();
+	}
+
+	void drawBlobs(const std::vector<Vertex>& vertices, float radius, int segments, bool filled)
+	{
+		size_t pointCount = 0;
+		float segmentCount = static_cast<float>(segments);
+		for (const auto& v : vertices)
+		{
+			for (int i = 0; i < segments; ++i)
+			{
+				float theta = 2.f * glm::pi<float>() * static_cast<float>(i) / segmentCount;
+				vertexBuffer[pointCount++] = Vertex(v.position.x + radius * glm::cos(theta),
+					v.position.y + radius * glm::sin(theta),
+					v.colour.r,
+					v.colour.g,
+					v.colour.b,
+					v.colour.a);
+			}
+		}
+
+		glBindFramebuffer(GL_FRAMEBUFFER, frameBufferHandle);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		auto drawMode = filled ? GL_POLYGON : GL_LINE_LOOP;
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * pointCount, &vertexBuffer[0]);
+
+		auto program = shaderCache->getProgram(GL::ProgramType::ColorDefault);
+		program.use();
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+		glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void*)sizeof(glm::vec2));
+		for (size_t i = 0; i < vertices.size(); ++i)
+		{
+			glDrawArrays(drawMode, i*segments, segments);
+		}
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(1);
+		program.unuse();
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(screenVBO), screenQuad);
+
+		auto blurPgm = shaderCache->getProgram(GL::ProgramType::Blur);
+		blurPgm.use();
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureColorLocation);
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), nullptr);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(1);
+		blurPgm.unuse();
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 	}
 
 }

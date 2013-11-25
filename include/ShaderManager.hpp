@@ -1,7 +1,7 @@
 #pragma once
 #include <GL/Program.hpp>
-#include <glm/glm.hpp>
 #include <array>
+#include "Vertex.hpp"
 
 class ShaderManager
 {
@@ -21,6 +21,6 @@ private:
 	GLuint sharedUniformsBindingIndex;
 	GLuint sharedUniformsBufferObject;
 	glm::mat4 mvpMatrix;
-	std::array<GL::Program, 2> programs;
+	std::array<GL::Program, GL::ProgramType::COUNT> programs;
 
 };
