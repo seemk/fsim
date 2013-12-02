@@ -9,6 +9,17 @@
 #include <chrono>
 #include <iostream>
 
+
+/* 
+	Shortcuts: 
+	B - toggle blur
+	Q - decrease particle size
+	W - increase particle size
+	A - add particle
+	L - show particle locations
+	P - pause
+*/
+
 enum Demo : int
 {
 	AtoMorph,
@@ -30,6 +41,7 @@ const int particlesY	= 50;
 const float particleIncrement = 2.0f;
 const int demoCount = 2;
 int currentDemo = Fluid;
+bool paused = false;
 
 bool addingParticles	= false;
 float scaleFactor		= 8.f;
@@ -90,9 +102,25 @@ void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int modi
 	case GLFW_KEY_SPACE:
 		if (action == GLFW_RELEASE) switchDemo();
 		break;
+	case GLFW_KEY_B:
+		if (action == GLFW_RELEASE) Drawing::debug::toggleBlur();
+		break;
+	case GLFW_KEY_I:
+		if (action == GLFW_RELEASE) Drawing::debug::toggleBlobInterpolation();
+		break;
+	case GLFW_KEY_P:
+		if (action == GLFW_RELEASE) paused = !paused;
+		break;
+	case GLFW_KEY_L:
+		if (action == GLFW_RELEASE) renderer->togglePositionRendering();
 	default:
 		break;
 	}
+}
+
+void glfwErrorCallback(int error, const char* description)
+{
+	std::cout << "GLFW error: " << description << "\n";
 }
 
 void reshape(GLFWwindow* window, int width, int height)
@@ -111,7 +139,7 @@ int main(int argc, char** argv)
 {
 	if (!glfwInit())
 		return -1;
-
+	glfwSetErrorCallback(glfwErrorCallback);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 	auto window = glfwCreateWindow(windowWidth, windowHeight, "FluidSim", nullptr, nullptr);
 
@@ -138,7 +166,7 @@ int main(int argc, char** argv)
 
 	shaderCache.initialise();
 	reshape(window, windowWidth, windowHeight);
-	Drawing::init(&shaderCache);
+	Drawing::init(&shaderCache, windowWidth, windowHeight);
 	int scale = static_cast<int>(scaleFactor);
 	auto fluid = Simulator::create(windowWidth / scale, windowHeight / scale);
 	fluid->createParticles(particlesX, particlesY);
@@ -155,6 +183,7 @@ int main(int argc, char** argv)
 
 	while (!glfwWindowShouldClose(window))
 	{
+
 		auto start = std::chrono::high_resolution_clock::now();
 
 		glfwGetFramebufferSize(window, &width, &height);
@@ -162,24 +191,23 @@ int main(int argc, char** argv)
 		glViewport(0, 0, windowWidth, windowHeight);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-
 		switch (currentDemo)
 		{
 		case AtoMorph:
 		{
-			if (atoDemo.paused) atoDemo.resume();
-			atoDemo.update();
-			atoDemo.drawScene();
+						 if (atoDemo.paused) atoDemo.resume();
+						 atoDemo.update();
+						 atoDemo.drawScene();
 		}
 			break;
 		case Fluid:
 		{
-			if (!atoDemo.paused) atoDemo.pause();
-			fluid->setDrag(mouse.pressed);
-			fluid->setMovePos(mouse.x / scaleFactor, mouse.y / scaleFactor);
-			if (addingParticles) fluid->addParticle(Particle(mouse.x / scaleFactor, mouse.y / scaleFactor, 1.0f, 1.0f));
-			fluid->step();
-			renderer->render();
+					  if (!atoDemo.paused) atoDemo.pause();
+					  fluid->setDrag(mouse.pressed);
+					  fluid->setMovePos(mouse.x / scaleFactor, mouse.y / scaleFactor);
+					  if (addingParticles) fluid->addParticle(Particle(mouse.x / scaleFactor, mouse.y / scaleFactor, 1.0f, 1.0f));
+					  if (!paused) fluid->step();
+					  renderer->render();
 		}
 			break;
 		default:
@@ -189,10 +217,12 @@ int main(int argc, char** argv)
 		auto end = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 		totalTime += duration.count();
 		frameCount++;
+
 	}
 	glfwTerminate();
 	std::cout << "Finished. Average frame time: " << totalTime / frameCount << " ms.\n";

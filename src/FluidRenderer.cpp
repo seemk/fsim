@@ -4,7 +4,7 @@
 #include "ShaderManager.hpp"
 
 FluidRenderer::FluidRenderer(int windowWidth, int windowHeight, float scaleFactor,
-						float particleRadius, Simulator* simulator, ShaderManager* cache)
+	float particleRadius, Simulator* simulator, ShaderManager* cache)
 	: fluidSimulator(simulator)
 	, shaderCache(cache)
 	, width(static_cast<float>(windowWidth))
@@ -13,6 +13,7 @@ FluidRenderer::FluidRenderer(int windowWidth, int windowHeight, float scaleFacto
 	, particleRadius(particleRadius)
 	, gridEnabled(false)
 	, particleVertices(simulator->getParticles().size())
+	, particlePositions(false)
 {
 
 }
@@ -31,8 +32,17 @@ void FluidRenderer::render()
 		drawGrid();
 	}
 
-	Drawing::setColor(glm::vec4(0.1f, 0.3f, 1.0f, 1.0f));
+
+	Drawing::setColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+	//Drawing::setColor(glm::vec4(0.1f, 0.3f, 1.0f, 1.0f));
 	Drawing::drawBlobs(particleVertices, particleRadius, 18);
+
+	if (particlePositions)
+	{
+		glPointSize(3.0f);
+		Drawing::setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+		Drawing::drawPoints(particleVertices);
+	}
 
 }
 

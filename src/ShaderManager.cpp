@@ -19,22 +19,23 @@ void ShaderManager::initialise()
 {
 	std::string vertexShaderStr = util::getFileContent("shaders/vertex.glsl");
 	std::string fragmentShaderStr = util::getFileContent("shaders/fragment.glsl");
-	std::string blurShaderVertexStr = util::getFileContent("shaders/fb_blur_vertex.glsl");
+	std::string texVertexShaderStr = util::getFileContent("shaders/tex_vertex.glsl");
 	std::string blurShaderFragStr = util::getFileContent("shaders/fb_blur_fragment.glsl");
 	std::string vertexColourShaderStr = util::getFileContent("shaders/vertex_colour.glsl");
-	std::string primitiveGeometryShaderStr = util::getFileContent("shaders/geometry.glsl");
+	std::string bilinearFilterShaderStr = util::getFileContent("shaders/texcoord_threshold.glsl");
 
 	auto vertexShader = GL::Shader::create(GL::Shader::Type::Vertex, vertexShaderStr);
 	auto fragmentShader = GL::Shader::create(GL::Shader::Type::Fragment, fragmentShaderStr);
-	auto blurShaderVertex = GL::Shader::create(GL::Shader::Type::Vertex, blurShaderVertexStr);
+	auto texCoordVertexShader = GL::Shader::create(GL::Shader::Type::Vertex, texVertexShaderStr);
 	auto blurShaderFrag = GL::Shader::create(GL::Shader::Type::Fragment, blurShaderFragStr);
 	auto vertexColourShader = GL::Shader::create(GL::Shader::Type::Vertex, vertexColourShaderStr);
-	auto primitiveGeometryShader = GL::Shader::create(GL::Shader::Type::Geometry, primitiveGeometryShaderStr);
+	auto bilinearFilterShader = GL::Shader::create(GL::Shader::Type::Fragment, bilinearFilterShaderStr);
 
 	programs[GL::ProgramType::Default] = GL::Program({ vertexShader, fragmentShader });
 	programs[GL::ProgramType::ColorDefault] = GL::Program({ vertexColourShader, fragmentShader });
-	programs[GL::ProgramType::Blur] = GL::Program({ blurShaderVertex, blurShaderFrag });
-	programs[GL::ProgramType::ColorCircles] = GL::Program({ vertexColourShader, primitiveGeometryShader, fragmentShader });
+	programs[GL::ProgramType::Blur] = GL::Program({ texCoordVertexShader, blurShaderFrag });
+	programs[GL::ProgramType::TexCoordThreshold] = GL::Program({ texCoordVertexShader, bilinearFilterShader });
+
 
 	for (auto& pgm : programs)
 	{

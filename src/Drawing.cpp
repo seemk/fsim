@@ -6,17 +6,25 @@
 namespace Drawing
 {
 
+	int screenWidth = 0;
+	int screenHeight = 0;
+	bool blurred = true;
+	bool blobInterpolation = true;
+	const int scale = 4;
 	const ShaderManager* shaderCache = nullptr;
 	const size_t bufferSize = 512000 * 4;
 	GLuint colorLocation = 0;
 	std::array<glm::vec2, bufferSize> drawBuffer;
 	std::array<Vertex, bufferSize> vertexBuffer;
 	GLuint vertexBufferHandle;
-	GLuint frameBufferHandle;
+	GLuint lowResBufferHandle;
 	GLuint vertexAttribObject;
 	GLuint textureColorLocation;
 	GLuint screenVAO;
 	GLuint screenVBO;
+
+	GLuint offScreenBufferHandle;
+	GLuint offScreenBufferTextureHandle;
 
 	GLfloat screenQuad[] = 
 	{
@@ -29,9 +37,32 @@ namespace Drawing
 		-1.0f, 1.0f, 0.0f, 1.0f
 	};
 
-	void init(const ShaderManager* cache)
+	void applyBlur(GLuint textureID)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(screenVBO), screenQuad);
+
+		auto blurPgm = shaderCache->getProgram(GL::ProgramType::Blur);
+		blurPgm.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), nullptr);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(1);
+		blurPgm.unuse();
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		
+	}
+
+	void init(const ShaderManager* cache, int windowWidth, int windowHeight)
 	{
 		shaderCache = cache;
+		screenWidth = windowWidth;
+		screenHeight = windowHeight;
 		auto pgm = shaderCache->getProgram(GL::ProgramType::Default);
 		pgm.use();
 		colorLocation = pgm.getUniformLocation("color");
@@ -59,18 +90,31 @@ namespace Drawing
 		blurProgram.setUniformValue(loc, 0);
 		blurProgram.unuse();
 
-		glGenFramebuffers(1, &frameBufferHandle);
-		glBindFramebuffer(GL_FRAMEBUFFER, frameBufferHandle);
+		glGenFramebuffers(1, &lowResBufferHandle);
+		glBindFramebuffer(GL_FRAMEBUFFER, lowResBufferHandle);
 
 		glGenTextures(1, &textureColorLocation);
 		glBindTexture(GL_TEXTURE_2D, textureColorLocation);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1280, 720, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, screenWidth/scale, screenHeight/scale, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorLocation, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+		glGenFramebuffers(1, &offScreenBufferHandle);
+		glBindFramebuffer(GL_FRAMEBUFFER, offScreenBufferHandle);
+
+		glGenTextures(1, &offScreenBufferTextureHandle);
+		glBindTexture(GL_TEXTURE_2D, offScreenBufferTextureHandle);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screenWidth, screenHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, offScreenBufferTextureHandle, 0);
+		glBindTexture(GL_TEXTURE_2D, 0);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
@@ -146,7 +190,8 @@ namespace Drawing
 			}
 		}
 		
-		glBindFramebuffer(GL_FRAMEBUFFER, frameBufferHandle);
+		glBindFramebuffer(GL_FRAMEBUFFER, lowResBufferHandle);
+		glViewport(0, 0, screenWidth / scale, screenHeight / scale);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
@@ -163,26 +208,41 @@ namespace Drawing
 		glDisableVertexAttribArray(0);
 		program.unuse();
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		
+		if (blurred) applyBlur(textureColorLocation);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(screenVBO), screenQuad);
+		glViewport(0, 0, screenWidth, screenHeight);
 
-		auto blurPgm = shaderCache->getProgram(GL::ProgramType::Blur);
-		blurPgm.use();
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textureColorLocation);
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), nullptr);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		glDisableVertexAttribArray(0);
-		glDisableVertexAttribArray(1);
-		blurPgm.unuse();
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		if (blobInterpolation)
+		{
+			glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
+			auto filterPgm = shaderCache->getProgram(GL::ProgramType::TexCoordThreshold);
+			filterPgm.use();
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, textureColorLocation);
+			glEnableVertexAttribArray(0);
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), nullptr);
+			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			glDisableVertexAttribArray(0);
+			glDisableVertexAttribArray(1);
+			filterPgm.unuse();
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+		}
+		else
+		{
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, lowResBufferHandle);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+			glBlitFramebuffer(0, 0, screenWidth / scale, screenHeight / scale, 0, 0, screenWidth, screenHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			glBindTexture(GL_TEXTURE_2D, offScreenBufferTextureHandle);
+			glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0, screenWidth, screenHeight, 0);
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
 	}
 
 	void drawLines(const std::vector<Line>& lines)
@@ -252,7 +312,7 @@ namespace Drawing
 			}
 		}
 
-		glBindFramebuffer(GL_FRAMEBUFFER, frameBufferHandle);
+		glBindFramebuffer(GL_FRAMEBUFFER, lowResBufferHandle);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		auto drawMode = filled ? GL_POLYGON : GL_LINE_LOOP;
@@ -294,5 +354,20 @@ namespace Drawing
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	}
+
+
+	namespace debug
+	{
+		void toggleBlur()
+		{
+			blurred = !blurred;
+		}
+
+		void toggleBlobInterpolation()
+		{
+			blobInterpolation = !blobInterpolation;
+		}
+	}
+
 
 }
