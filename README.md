@@ -34,6 +34,3 @@ make
 
 The resulting binary after building is in the build/bin/ folder. ** NB! ** OpenGL 3.3 required.
 
-### Next steps
-* Mesh generation from the particle cloud using marching squares. 
-* Applying different shaders to the mesh to see how it plays out :)
