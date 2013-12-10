@@ -8,55 +8,13 @@ namespace Drawing
 
 	int screenWidth = 0;
 	int screenHeight = 0;
-	bool blurred = true;
-	bool blobInterpolation = true;
-	const int scale = 4;
+
 	const ShaderManager* shaderCache = nullptr;
 	const size_t bufferSize = 512000 * 4;
 	GLuint colorLocation = 0;
 	std::array<glm::vec2, bufferSize> drawBuffer;
-	std::array<Vertex, bufferSize> vertexBuffer;
-	GLuint vertexBufferHandle;
-	GLuint lowResBufferHandle;
-	GLuint vertexAttribObject;
-	GLuint textureColorLocation;
-	GLuint screenVAO;
-	GLuint screenVBO;
-
-	GLuint offScreenBufferHandle;
-	GLuint offScreenBufferTextureHandle;
-
-	GLfloat screenQuad[] = 
-	{
-		-1.0f, 1.0f, 0.0f, 1.0f,
-		1.0f, 1.0f, 1.0f, 1.0f,
-		1.0f, -1.0f, 1.0f, 0.0f,
-
-		1.0f, -1.0f, 1.0f, 0.0f,
-		-1.0f, -1.0f, 0.0f, 0.0f,
-		-1.0f, 1.0f, 0.0f, 1.0f
-	};
-
-	void applyBlur(GLuint textureID)
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(screenVBO), screenQuad);
-
-		auto blurPgm = shaderCache->getProgram(GL::ProgramType::Blur);
-		blurPgm.use();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textureID);
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), nullptr);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		glDisableVertexAttribArray(0);
-		glDisableVertexAttribArray(1);
-		blurPgm.unuse();
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		
-	}
+	GLuint drawBufferVBO;
+	GLuint drawBufferVAO;
 
 	void init(const ShaderManager* cache, int windowWidth, int windowHeight)
 	{
@@ -68,62 +26,26 @@ namespace Drawing
 		colorLocation = pgm.getUniformLocation("color");
 		pgm.unuse();
 
-		glGenVertexArrays(1, &vertexAttribObject);
-		glBindVertexArray(vertexAttribObject);
-		glGenBuffers(1, &vertexBufferHandle);
+		glGenVertexArrays(1, &drawBufferVAO);
+		glBindVertexArray(drawBufferVAO);
+		glGenBuffers(1, &drawBufferVBO);
 
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
-		glBufferData(GL_ARRAY_BUFFER, bufferSize * sizeof(float), nullptr, GL_STREAM_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, drawBufferVBO);
+		glBufferData(GL_ARRAY_BUFFER, drawBuffer.size() * sizeof(float), nullptr, GL_STREAM_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-		glGenVertexArrays(1, &screenVAO);
-		glBindVertexArray(screenVAO);
-		glGenBuffers(1, &screenVBO);
-
-		glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(screenQuad), screenQuad, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		auto blurProgram = shaderCache->getProgram(GL::ProgramType::Default);
-		blurProgram.use();
-		auto loc = blurProgram.getUniformLocation("texFrameBuf");
-		blurProgram.setUniformValue(loc, 0);
-		blurProgram.unuse();
-
-		glGenFramebuffers(1, &lowResBufferHandle);
-		glBindFramebuffer(GL_FRAMEBUFFER, lowResBufferHandle);
-
-		glGenTextures(1, &textureColorLocation);
-		glBindTexture(GL_TEXTURE_2D, textureColorLocation);
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, screenWidth/scale, screenHeight/scale, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorLocation, 0);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
-		glGenFramebuffers(1, &offScreenBufferHandle);
-		glBindFramebuffer(GL_FRAMEBUFFER, offScreenBufferHandle);
-
-		glGenTextures(1, &offScreenBufferTextureHandle);
-		glBindTexture(GL_TEXTURE_2D, offScreenBufferTextureHandle);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screenWidth, screenHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, offScreenBufferTextureHandle, 0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	void drawPoints(const std::vector<glm::vec2>& points)
+	void drawPoints(const std::vector<Vertex>& points)
 	{
+		std::transform(points.begin(), points.end(), drawBuffer.begin(), [](const Vertex& v)
+		{
+			return v.position;
+		});
 		auto program = shaderCache->getProgram(GL::ProgramType::Default);
-
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * points.size(), &points[0]);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, drawBufferVBO);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * points.size(), &drawBuffer[0]);
 
 		program.use();
 		glEnableVertexAttribArray(0);
@@ -162,7 +84,7 @@ namespace Drawing
 			drawBuffer[i + 1] = glm::vec2(col2.x, col2.y);
 		}
 
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
+		glBindBuffer(GL_ARRAY_BUFFER, drawBufferVBO);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * bufferElements, &drawBuffer[0]);
 		
 		auto program = shaderCache->getProgram(GL::ProgramType::Default);
@@ -175,80 +97,10 @@ namespace Drawing
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	void drawBlobs(const std::vector<glm::vec2>& midPoints, float radius, int segments)
-	{
-
-		size_t pointCount = 0;
-		float segmentCount = static_cast<float>(segments);
-		for (const auto& p : midPoints)
-		{
-			for (int i = 0; i < segments; ++i)
-			{
-				float theta = 2.f * glm::pi<float>() * static_cast<float>(i) / segmentCount;
-				drawBuffer[pointCount++] = glm::vec2(p.x + radius * glm::cos(theta),
-					p.y + radius * glm::sin(theta));
-			}
-		}
-		
-		glBindFramebuffer(GL_FRAMEBUFFER, lowResBufferHandle);
-		glViewport(0, 0, screenWidth / scale, screenHeight / scale);
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * pointCount, &drawBuffer[0]);
-
-		auto program = shaderCache->getProgram(GL::ProgramType::Default);
-		program.use();
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
-		for (size_t i = 0; i < midPoints.size(); ++i)
-		{
-			glDrawArrays(GL_POLYGON, i*segments, segments);
-		}
-		glDisableVertexAttribArray(0);
-		program.unuse();
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		
-		if (blurred) applyBlur(textureColorLocation);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		glViewport(0, 0, screenWidth, screenHeight);
-
-
-		if (blobInterpolation)
-		{
-			glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
-			auto filterPgm = shaderCache->getProgram(GL::ProgramType::TexCoordThreshold);
-			filterPgm.use();
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, textureColorLocation);
-			glEnableVertexAttribArray(0);
-			glEnableVertexAttribArray(1);
-			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), nullptr);
-			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-			glDisableVertexAttribArray(0);
-			glDisableVertexAttribArray(1);
-			filterPgm.unuse();
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-		}
-		else
-		{
-			glBindFramebuffer(GL_READ_FRAMEBUFFER, lowResBufferHandle);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-			glBlitFramebuffer(0, 0, screenWidth / scale, screenHeight / scale, 0, 0, screenWidth, screenHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-			glBindTexture(GL_TEXTURE_2D, offScreenBufferTextureHandle);
-			glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0, screenWidth, screenHeight, 0);
-			glBindTexture(GL_TEXTURE_2D, 0);
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		}
-	}
-
 	void drawLines(const std::vector<Line>& lines)
 	{
 		const size_t vertices = 2 * lines.size();
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
+		glBindBuffer(GL_ARRAY_BUFFER, drawBufferVBO);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * vertices, &lines[0]);
 
 		auto program = shaderCache->getProgram(GL::ProgramType::Default);
@@ -279,7 +131,7 @@ namespace Drawing
 		drawBuffer[2] = topRight;
 		drawBuffer[3] = Point(bottomLeft.x, bottomLeft.y + size.y);
 
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
+		glBindBuffer(GL_ARRAY_BUFFER, drawBufferVBO);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * segments, &drawBuffer[0]);
 
 		auto pgm = shaderCache->getProgram(GL::ProgramType::Default);
@@ -293,81 +145,5 @@ namespace Drawing
 
 		pgm.unuse();
 	}
-
-	void drawBlobs(const std::vector<Vertex>& vertices, float radius, int segments, bool filled)
-	{
-		size_t pointCount = 0;
-		float segmentCount = static_cast<float>(segments);
-		for (const auto& v : vertices)
-		{
-			for (int i = 0; i < segments; ++i)
-			{
-				float theta = 2.f * glm::pi<float>() * static_cast<float>(i) / segmentCount;
-				vertexBuffer[pointCount++] = Vertex(v.position.x + radius * glm::cos(theta),
-					v.position.y + radius * glm::sin(theta),
-					v.colour.r,
-					v.colour.g,
-					v.colour.b,
-					v.colour.a);
-			}
-		}
-
-		glBindFramebuffer(GL_FRAMEBUFFER, lowResBufferHandle);
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		auto drawMode = filled ? GL_POLYGON : GL_LINE_LOOP;
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * pointCount, &vertexBuffer[0]);
-
-		auto program = shaderCache->getProgram(GL::ProgramType::ColorDefault);
-		program.use();
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
-		glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void*)sizeof(glm::vec2));
-		for (size_t i = 0; i < vertices.size(); ++i)
-		{
-			glDrawArrays(drawMode, i*segments, segments);
-		}
-		glDisableVertexAttribArray(0);
-		glDisableVertexAttribArray(1);
-		program.unuse();
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(screenVBO), screenQuad);
-
-		auto blurPgm = shaderCache->getProgram(GL::ProgramType::Blur);
-		blurPgm.use();
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textureColorLocation);
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), nullptr);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		glDisableVertexAttribArray(0);
-		glDisableVertexAttribArray(1);
-		blurPgm.unuse();
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	}
-
-
-	namespace debug
-	{
-		void toggleBlur()
-		{
-			blurred = !blurred;
-		}
-
-		void toggleBlobInterpolation()
-		{
-			blobInterpolation = !blobInterpolation;
-		}
-	}
-
 
 }

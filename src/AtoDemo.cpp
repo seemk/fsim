@@ -87,7 +87,7 @@ void AtoDemo::drawScene()
 		vertices.emplace_back(x * 3, y * 2, r, g, b, 10);
 	}
 
-	Drawing::drawBlobs(vertices, 5.f, 12, true);
+	//Drawing::drawBlobs(vertices, 5.f, 12);
 }
 
 void AtoDemo::update()

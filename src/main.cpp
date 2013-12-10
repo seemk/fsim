@@ -103,16 +103,20 @@ void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int modi
 		if (action == GLFW_RELEASE) switchDemo();
 		break;
 	case GLFW_KEY_B:
-		if (action == GLFW_RELEASE) Drawing::debug::toggleBlur();
+		if (action == GLFW_RELEASE) renderer->toggleBlur();
 		break;
 	case GLFW_KEY_I:
-		if (action == GLFW_RELEASE) Drawing::debug::toggleBlobInterpolation();
+		if (action == GLFW_RELEASE) renderer->toggleBlobInterpolation();
 		break;
 	case GLFW_KEY_P:
 		if (action == GLFW_RELEASE) paused = !paused;
 		break;
 	case GLFW_KEY_L:
 		if (action == GLFW_RELEASE) renderer->togglePositionRendering();
+		break;
+	case GLFW_KEY_G:
+		if (action == GLFW_RELEASE) renderer->enableGrid(renderer->isGridEnabled());
+		break;
 	default:
 		break;
 	}
@@ -171,7 +175,7 @@ int main(int argc, char** argv)
 	auto fluid = Simulator::create(windowWidth / scale, windowHeight / scale);
 	fluid->createParticles(particlesX, particlesY);
 	fluid->step();
-	float particleRadius = 16.f;
+	float particleRadius = 8.f;
 	renderer.reset(new FluidRenderer(windowWidth, windowHeight, scaleFactor, particleRadius, fluid.get(), &shaderCache));
 	renderer->enableGrid(false);
 	int width, height;

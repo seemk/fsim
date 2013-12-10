@@ -8,6 +8,10 @@ struct Particle
 		, y(y_)
 		, u(u_)
 		, v(v_)
+		, r(0)
+		, g(255)
+		, b(0)
+		
 	{
 
 	}
@@ -28,6 +32,10 @@ struct Particle
 	float py[3];
 	float gx[3];
 	float gy[3];
+
+	unsigned char r;
+	unsigned char g;
+	unsigned char b;
 
 	void initialiseWeights()
 	{
