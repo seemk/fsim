@@ -115,7 +115,7 @@ void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int modi
 		if (action == GLFW_RELEASE) renderer->togglePositionRendering();
 		break;
 	case GLFW_KEY_G:
-		if (action == GLFW_RELEASE) renderer->enableGrid(renderer->isGridEnabled());
+		if (action == GLFW_RELEASE) renderer->enableGrid(!renderer->isGridEnabled());
 		break;
 	default:
 		break;
@@ -209,7 +209,13 @@ int main(int argc, char** argv)
 					  if (!atoDemo.paused) atoDemo.pause();
 					  fluid->setDrag(mouse.pressed);
 					  fluid->setMovePos(mouse.x / scaleFactor, mouse.y / scaleFactor);
-					  if (addingParticles) fluid->addParticle(Particle(mouse.x / scaleFactor, mouse.y / scaleFactor, 1.0f, 1.0f));
+					  if (addingParticles)
+					  {
+
+						  fluid->addParticle(Particle(mouse.x / scaleFactor,
+							  mouse.y / scaleFactor, 1.0f, 1.0f));
+
+					  }
 					  if (!paused) fluid->step();
 					  renderer->render();
 		}

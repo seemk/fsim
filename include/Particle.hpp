@@ -8,9 +8,9 @@ struct Particle
 		, y(y_)
 		, u(u_)
 		, v(v_)
-		, r(0)
+		, r(255)
 		, g(255)
-		, b(0)
+		, b(255)
 		
 	{
 

@@ -1,5 +1,7 @@
 #pragma once
-#define STBI_SIMD
+#ifdef WIN32
+	#define STBI_SIMD
+#endif
 // Limitations:
 //    - no jpeg progressive support
 //    - non-HDR formats support 8-bit samples only (jpeg, png)

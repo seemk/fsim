@@ -199,7 +199,7 @@ void FluidRenderer::setupBuffers()
 	glBufferData(GL_ARRAY_BUFFER, vertexBuffer.size() * sizeof(float), nullptr, GL_STREAM_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	//
+	// Offscreen buffer
 
 	auto blurProgram = shaderCache->getProgram(GL::ProgramType::Default);
 	blurProgram.use();
