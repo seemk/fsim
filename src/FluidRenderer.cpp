@@ -44,20 +44,18 @@ void FluidRenderer::setParticleRadius(float radius)
 	particleRadius = radius;
 }
 
-void FluidRenderer::render()
+void FluidRenderer::render(const std::vector<Vertex>& vertices)
 {
-	updatePositions();
 	if (gridEnabled)
 	{
 		Drawing::setColor(glm::vec4(0.392f, 0.8, 0.2f, 1.0f));
 		drawGrid();
 	}
 
-
 	Drawing::setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 
 	const int segments = 18;
-	generateCircleVertices(segments);
+	generateCircleVertices(vertices, segments);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, lowResBufferHandle);
 	
@@ -66,7 +64,7 @@ void FluidRenderer::render()
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex)* pointCount, &vertexBuffer[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * pointCount, &vertexBuffer[0]);
 
 	auto program = shaderCache->getProgram(GL::ProgramType::ColorDefault);
 	program.use();
@@ -74,9 +72,9 @@ void FluidRenderer::render()
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), nullptr);
 	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void*)sizeof(glm::vec2));
-	for (size_t i = 0; i < particleVertices.size(); ++i)
+	for (size_t i = 0; i < vertices.size(); ++i)
 	{
-		glDrawArrays(GL_POLYGON, i*segments, segments);
+		glDrawArrays(GL_POLYGON, i * segments, segments);
 	}
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
@@ -92,7 +90,7 @@ void FluidRenderer::render()
 	if (blobInterpolation)
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
-		auto filterPgm = shaderCache->getProgram(GL::ProgramType::TexCoordThreshold);
+		auto filterPgm = shaderCache->getProgram(GL::ProgramType::Fluid);
 		filterPgm.use();
 		glBindTexture(GL_TEXTURE_2D, lowResTextureHandle);
 		glEnableVertexAttribArray(0);
@@ -121,17 +119,17 @@ void FluidRenderer::render()
 	{
 		glPointSize(3.0f);
 		Drawing::setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-		Drawing::drawPoints(particleVertices);
+		Drawing::drawPoints(vertices);
 		
 	}
 }
 
-void FluidRenderer::generateCircleVertices(int segments)
+void FluidRenderer::generateCircleVertices(const std::vector<Vertex>& vertices, int segments)
 {
 	const float segmentCount = static_cast<float>(segments);
 
 	pointCount = 0;
-	for (const auto& v : particleVertices)
+	for (const auto& v : vertices)
 	{
 		for (int i = 0; i < segments; ++i)
 		{
@@ -200,7 +198,6 @@ void FluidRenderer::setupBuffers()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// Offscreen buffer
-
 	auto blurProgram = shaderCache->getProgram(GL::ProgramType::Default);
 	blurProgram.use();
 	auto loc = blurProgram.getUniformLocation("texFrameBuf");
@@ -256,4 +253,13 @@ float FluidRenderer::getParticleRadius() const
 void FluidRenderer::toggleBlur()
 {
 	blurred = !blurred;
+}
+
+void FluidRenderer::setColorCutting(bool colorCutting)
+{
+	auto fluidPgm = shaderCache->getProgram(GL::ProgramType::Fluid);
+	fluidPgm.use();
+	auto colorCutLocation = fluidPgm.getUniformLocation("colorCut");
+	fluidPgm.setUniformValue(colorCutLocation, static_cast<GLint>(colorCutting));
+	fluidPgm.unuse();
 }

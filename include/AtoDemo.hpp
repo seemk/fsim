@@ -3,11 +3,13 @@
 #include "atomorph/atomorph.h"
 #include <random>
 
+class FluidRenderer;
+
 class AtoDemo
 {
 public:
 
-	AtoDemo(size_t threadCount);
+	AtoDemo(size_t threadCount, FluidRenderer* renderer);
 
 	void update();
 	void drawScene();
@@ -30,7 +32,7 @@ private:
 	std::uniform_int_distribution<unsigned> distribution;
 
 	void fillScene(size_t frame, const char* imagePath);
-	
+	FluidRenderer* fluidRenderer;
 	std::vector<AM_THREAD> threads;
 	AM_SCENE scene;
 };

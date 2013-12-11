@@ -22,19 +22,19 @@ void ShaderManager::initialise()
 	std::string texVertexShaderStr = util::getFileContent("shaders/tex_vertex.glsl");
 	std::string blurShaderFragStr = util::getFileContent("shaders/fb_blur_fragment.glsl");
 	std::string vertexColourShaderStr = util::getFileContent("shaders/vertex_colour.glsl");
-	std::string bilinearFilterShaderStr = util::getFileContent("shaders/texcoord_threshold.glsl");
+	std::string fluidShaderStr = util::getFileContent("shaders/fluid_frag.glsl");
 
 	auto vertexShader = GL::Shader::create(GL::Shader::Type::Vertex, vertexShaderStr);
 	auto fragmentShader = GL::Shader::create(GL::Shader::Type::Fragment, fragmentShaderStr);
 	auto texCoordVertexShader = GL::Shader::create(GL::Shader::Type::Vertex, texVertexShaderStr);
 	auto blurShaderFrag = GL::Shader::create(GL::Shader::Type::Fragment, blurShaderFragStr);
 	auto vertexColourShader = GL::Shader::create(GL::Shader::Type::Vertex, vertexColourShaderStr);
-	auto bilinearFilterShader = GL::Shader::create(GL::Shader::Type::Fragment, bilinearFilterShaderStr);
+	auto fluidShader = GL::Shader::create(GL::Shader::Type::Fragment, fluidShaderStr);
 
 	programs[GL::ProgramType::Default] = GL::Program({ vertexShader, fragmentShader });
 	programs[GL::ProgramType::ColorDefault] = GL::Program({ vertexColourShader, fragmentShader });
 	programs[GL::ProgramType::Blur] = GL::Program({ texCoordVertexShader, blurShaderFrag });
-	programs[GL::ProgramType::TexCoordThreshold] = GL::Program({ texCoordVertexShader, bilinearFilterShader });
+	programs[GL::ProgramType::Fluid] = GL::Program({ texCoordVertexShader, fluidShader });
 
 
 	for (auto& pgm : programs)

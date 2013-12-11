@@ -9,17 +9,6 @@
 #include <chrono>
 #include <iostream>
 
-
-/* 
-	Shortcuts: 
-	B - toggle blur
-	Q - decrease particle size
-	W - increase particle size
-	A - add particle
-	L - show particle locations
-	P - pause
-*/
-
 enum Demo : int
 {
 	AtoMorph,
@@ -167,7 +156,14 @@ int main(int argc, char** argv)
 	}
 
 	std::cout << "OpenGL version: " << glGetString(GL_VERSION) << "\n";
-
+	std::cout << "Hotkeys: \n\t Q - decrease particle size"
+		"\n\t W - increase particle size"
+		"\n\t P - pause"
+		"\n\t L - display particles"
+		"\n\t B - toggle blur"
+		"\n\t I - toggle interpolation + coloring shader"
+		"\n\t Space - toggles between atomorph and the simulator\n";
+				
 	shaderCache.initialise();
 	reshape(window, windowWidth, windowHeight);
 	Drawing::init(&shaderCache, windowWidth, windowHeight);
@@ -182,7 +178,7 @@ int main(int argc, char** argv)
 	size_t frameCount = 0;
 	long long totalTime = 0;
 
-	AtoDemo atoDemo(1);
+	AtoDemo atoDemo(1, renderer.get());
 	atoDemo.pause();
 
 	while (!glfwWindowShouldClose(window))
@@ -199,25 +195,35 @@ int main(int argc, char** argv)
 		{
 		case AtoMorph:
 		{
-						 if (atoDemo.paused) atoDemo.resume();
+						 if (atoDemo.paused)
+						 {
+							 renderer->setColorCutting(false);
+							 renderer->setParticleRadius(4.f);
+							 atoDemo.resume();
+						 }
 						 atoDemo.update();
 						 atoDemo.drawScene();
 		}
-			break;
+		break;
 		case Fluid:
 		{
-					  if (!atoDemo.paused) atoDemo.pause();
+					  if (!atoDemo.paused)
+					  {
+						  renderer->setColorCutting(true);
+						  renderer->setParticleRadius(8.f);
+						  atoDemo.pause();
+					  }
 					  fluid->setDrag(mouse.pressed);
 					  fluid->setMovePos(mouse.x / scaleFactor, mouse.y / scaleFactor);
 					  if (addingParticles)
 					  {
-
 						  fluid->addParticle(Particle(mouse.x / scaleFactor,
 							  mouse.y / scaleFactor, 1.0f, 1.0f));
 
 					  }
 					  if (!paused) fluid->step();
-					  renderer->render();
+					  renderer->updatePositions();
+					  renderer->render(renderer->getSimulatorVertices());
 		}
 			break;
 		default:

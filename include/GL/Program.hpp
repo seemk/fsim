@@ -14,7 +14,7 @@ namespace GL
 		Default, // The default shader which just colours the vertices
 		ColorDefault,
 		Blur,
-		TexCoordThreshold,
+		Fluid,
 
 		COUNT
 	};

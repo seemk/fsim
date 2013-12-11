@@ -20,6 +20,5 @@ void main()
       } 
    }
 
-   //sum = step(threshold, sum) * sum;
    outColor = sum;
 }

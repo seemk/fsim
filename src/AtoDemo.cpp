@@ -1,15 +1,16 @@
 #include "AtoDemo.hpp"
 #include "Vertex.hpp"
-#include "Drawing.hpp"
+#include "FluidRenderer.hpp"
 #include "stb_image.h"
 #include <memory>
 
-AtoDemo::AtoDemo(size_t threadCount)
+AtoDemo::AtoDemo(size_t threadCount, FluidRenderer* renderer)
 	: paused(false)
 	, threadCount(threadCount)
 	, selectedThreadId(-1)
 	, randomEngine(std::random_device()())
 	, distribution(1, std::numeric_limits<unsigned>::max())
+	, fluidRenderer(renderer)
 	, threads(threadCount)
 {
 	scene.init(40000, 3);
@@ -70,7 +71,6 @@ void AtoDemo::drawScene()
 	morph_time++;
 	float t = (morph_time % slowness) / static_cast<float>(slowness);
 	if (morph_time == slowness + 1) morph_time = 0;
-
 	size_t atoms = scene.atom_count();
 	for (size_t i = 0; i<atoms; ++i) {
 		float x, y;
@@ -84,10 +84,10 @@ void AtoDemo::drawScene()
 		y = py*morphHeight;
 		unsigned char r, g, b, a;
 		scene.get_rgba(i, t, &r, &g, &b, &a);
-		vertices.emplace_back(x * 3, y * 2, r, g, b, 10);
+		vertices.emplace_back(x * 4.f, y * 2.25f, r, g, b, 255);
 	}
-
-	//Drawing::drawBlobs(vertices, 5.f, 12);
+	
+	fluidRenderer->render(vertices);
 }
 
 void AtoDemo::update()
