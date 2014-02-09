@@ -26,12 +26,15 @@ file(COPY shaders DESTINATION ${OUT_DIR})
 set(GLEW_PATH "third_party/glew")
 set(GLFW_PATH "third_party/glfw")
 set(GLM_PATH "third_party/glm")
+set(BOX2D_PATH "third_party/Box2D")
 
 add_subdirectory(${GLFW_PATH})
+add_subdirectory(${BOX2D_PATH})
 
 include_directories(${GLEW_PATH}/include)
 include_directories(${GLFW_PATH}/include)
 include_directories(${GLM_PATH}/)
+include_directories(${BOX2D_PATH})
 include_directories(include)
 
 add_subdirectory(${GLEW_PATH}/src)
