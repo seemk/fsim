@@ -86,9 +86,6 @@ void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int modi
 	case GLFW_KEY_L:
 		if (action == GLFW_RELEASE) renderer->togglePositionRendering();
 		break;
-	case GLFW_KEY_G:
-		if (action == GLFW_RELEASE) renderer->enableGrid(!renderer->isGridEnabled());
-		break;
 	default:
 		break;
 	}
@@ -155,7 +152,6 @@ int main(int argc, char** argv)
 	fluid->step();
 	float particleRadius = 8.f;
 	renderer.reset(new FluidRenderer(windowWidth, windowHeight, scaleFactor, particleRadius, fluid.get(), &shaderCache));
-	renderer->enableGrid(false);
 	int width, height;
 	size_t frameCount = 0;
 	long long totalTime = 0;
@@ -164,7 +160,6 @@ int main(int argc, char** argv)
 	{
 
 		auto start = std::chrono::high_resolution_clock::now();
-
 		glfwGetFramebufferSize(window, &width, &height);
 		auto ratio = width / (float)height;
 		glViewport(0, 0, windowWidth, windowHeight);

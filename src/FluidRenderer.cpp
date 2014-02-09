@@ -22,7 +22,6 @@ FluidRenderer::FluidRenderer(int windowWidth, int windowHeight, float scaleFacto
 	, particleRadius(particleRadius)
 	, blurred(true)
 	, blobInterpolation(true)
-	, gridEnabled(false)
 	, particleVertices(simulator->getParticles().size())
 	, particlePositions(false)
 	, pointCount(0)
@@ -46,11 +45,6 @@ void FluidRenderer::setParticleRadius(float radius)
 
 void FluidRenderer::render(const std::vector<Vertex>& vertices)
 {
-	if (gridEnabled)
-	{
-		Drawing::setColor(glm::vec4(0.392f, 0.8, 0.2f, 1.0f));
-		drawGrid();
-	}
 
 	Drawing::setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 
@@ -216,18 +210,6 @@ void FluidRenderer::setupBuffers()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void FluidRenderer::drawGrid()
-{
-	auto grid = fluidSimulator->getGrid();
-
-	auto rows = grid.rows();
-	auto cols = grid.cols();
-	auto width = rows * scale;
-	auto height = cols * scale;
-	Drawing::drawGrid(glm::vec2(0.0f, 0.0f), glm::vec2(width, height), cols, rows);
-
-}
-
 void FluidRenderer::updatePositions()
 {
 	auto& particles = fluidSimulator->getParticles();
@@ -238,11 +220,6 @@ void FluidRenderer::updatePositions()
 
 		return Vertex{ p.x * scale, p.y * scale, p.r, p.g, p.b, 255 };
 	});
-}
-
-void FluidRenderer::enableGrid(bool enable)
-{
-	gridEnabled = enable;
 }
 
 float FluidRenderer::getParticleRadius() const

@@ -38,8 +38,6 @@ public:
 	void updatePositions();
 	void setParticleRadius(float radius);
 	float getParticleRadius() const;
-	void enableGrid(bool enable);
-	bool isGridEnabled() const { return gridEnabled; }
 	void toggleBlur();
 	void toggleBlobInterpolation() { blobInterpolation = !blobInterpolation; }
 	void togglePositionRendering() { particlePositions = !particlePositions; }
@@ -49,7 +47,6 @@ public:
 
 private:
 
-	void drawGrid();
 	void setupBuffers();
 	void generateCircleVertices(const std::vector<Vertex>& vertices, int segments);
 	void applyBlur(GLuint textureID);
@@ -60,7 +57,6 @@ private:
 	ScreenSize screenSize;
 	float scale;
 	float particleRadius;
-	bool gridEnabled;
 	bool particlePositions;
 	bool blurred;
 	bool blobInterpolation;
