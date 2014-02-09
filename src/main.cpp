@@ -1,7 +1,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/ext.hpp>
-#include "FluidSimulator.hpp"
+#include "MPMSimulation.hpp"
 #include "FluidRenderer.hpp"
 #include "Drawing.hpp"
 #include "ShaderManager.hpp"
@@ -147,9 +147,10 @@ int main(int argc, char** argv)
 	reshape(window, windowWidth, windowHeight);
 	Drawing::init(&shaderCache, windowWidth, windowHeight);
 	int scale = static_cast<int>(scaleFactor);
-	auto fluid = Simulator::create(windowWidth / scale, windowHeight / scale);
+	auto mpmSimulation = std::make_unique<MPMSimulation>(windowWidth / scale, windowHeight / scale);
+	std::unique_ptr<FluidSimulation> fluid = std::move(mpmSimulation);
 	fluid->createParticles(particlesX, particlesY);
-	fluid->step();
+	fluid->update(0.0f);
 	float particleRadius = 8.f;
 	renderer.reset(new FluidRenderer(windowWidth, windowHeight, scaleFactor, particleRadius, fluid.get(), &shaderCache));
 	int width, height;
@@ -166,17 +167,16 @@ int main(int argc, char** argv)
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-		fluid->setDrag(mouse.pressed);
-		fluid->setMovePos(mouse.x / scaleFactor, mouse.y / scaleFactor);
+		fluid->setDragging(mouse.pressed);
+		auto mousePosition = glm::vec2{ mouse.x / scaleFactor, mouse.y / scaleFactor };
+		fluid->setInputPosition(mousePosition);
 		if (addingParticles)
 		{
-			fluid->addParticle(Particle(mouse.x / scaleFactor,
-				mouse.y / scaleFactor, 1.0f, 1.0f));
-
+			fluid->addParticle(mousePosition);
 		}
-		if (!paused) fluid->step();
+		if (!paused) fluid->update(0.167f); // TODO: Remove the constant
 		renderer->updatePositions();
-		renderer->render(renderer->getSimulatorVertices());
+		renderer->render();
 
 		auto end = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);

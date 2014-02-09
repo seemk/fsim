@@ -1,20 +1,13 @@
-#include "FluidSimulator.hpp"
+#include "MPMSimulation.hpp"
 #include <iterator>
 
-void Node::clear()
+void MPMNode::clear()
 {
 	m = d = gx = gy = u = v = ax = ay = 0.0;
 	active = false;
 }
 
-std::unique_ptr<Simulator> Simulator::create(int windowWidth, int windowHeight)
-{
-	int sim_w = windowWidth;
-	int sim_h = windowHeight;
-	return std::unique_ptr<Simulator>(new Simulator(sim_w, sim_h));
-}
-
-Simulator::Simulator(int gridSizeX, int gridSizeY)
+MPMSimulation::MPMSimulation(int gridSizeX, int gridSizeY)
 	: gsizeX(gridSizeX)
 	, gsizeY(gridSizeY)
 	, pressed(false)
@@ -31,26 +24,12 @@ Simulator::Simulator(int gridSizeX, int gridSizeY)
 
 }
 
-void Simulator::createParticles(size_t countX, size_t countY)
+void MPMSimulation::addParticle(glm::vec2 location)
 {
-	auto particleCount = countX * countY;
-	particles.reserve(particleCount);
-	for (size_t y = 0; y < countY; ++y)
-	{
-		for (size_t x = 0; x < countX; ++x)
-		{
-			auto particle = Particle(x + 4.f, y + 4.f, 1.0f, 0.0f);
-			particles.push_back(particle);
-		}
-	}
+	particles.emplace_back(location.x, location.y, 1.0f, 1.0f);
 }
 
-void Simulator::addParticle(const Particle& p)
-{
-	particles.push_back(p);
-}
-
-void Simulator::step()
+void MPMSimulation::update(float dt)
 {
 	bool drag = false;
 	
@@ -311,29 +290,43 @@ void Simulator::step()
 	}
 }
 
-std::vector<Particle>& Simulator::getParticles()
-{
-	return particles;
-}
-
-void Simulator::setDrag(bool drag)
+void MPMSimulation::setDragging(bool drag)
 {
 	pressed = drag;
 }
 
-void Simulator::setMovePos(float x, float y)
+void MPMSimulation::setInputPosition(glm::vec2 position)
 {
-	mx = x;
-	my = y;
+	mx = position.x;
+	my = position.y;
 }
 
-std::vector<glm::vec2> Simulator::getParticlePositions() const
+size_t MPMSimulation::getParticleCount() const
+{
+	return particles.size();
+}
+
+std::vector<glm::vec2> MPMSimulation::getParticlePositions() const
 {
 	std::vector<glm::vec2> positions;
 	positions.reserve(particleCount());
-	std::transform(particles.begin(), particles.end(), std::back_inserter(positions), [](const Particle& p) {
+	std::transform(particles.begin(), particles.end(), std::back_inserter(positions), [](const MPMParticle& p) {
 		return glm::vec2(p.x, p.y);
 	});
 
 	return positions;
+}
+
+void MPMSimulation::createParticles(size_t horizontalAmount, size_t verticalAmount)
+{
+	auto particleCount = horizontalAmount * verticalAmount;
+	particles.reserve(particleCount);
+	for (size_t y = 0; y < verticalAmount; ++y)
+	{
+		for (size_t x = 0; x < horizontalAmount; ++x)
+		{
+			auto particle = MPMParticle(x + 4.f, y + 4.f, 1.0f, 0.0f);
+			particles.push_back(particle);
+		}
+	}
 }

@@ -4,7 +4,7 @@
 #include <vector>
 #include <array>
 
-class Simulator;
+class FluidSimulation;
 class ShaderManager;
 
 struct ScreenSize
@@ -32,16 +32,17 @@ public:
 
 	FluidRenderer(int windowWidth, int windowHeight,
 				float scaleFactor, float particleRadius,
-				Simulator* simulator, ShaderManager* cache);
+				const FluidSimulation* simulation, ShaderManager* cache);
 
-	void render(const std::vector<Vertex>& vertices);
+	void setSimulation(const FluidSimulation* simulation);
+	void render();
 	void updatePositions();
 	void setParticleRadius(float radius);
 	float getParticleRadius() const;
 	void toggleBlur();
 	void toggleBlobInterpolation() { blobInterpolation = !blobInterpolation; }
 	void togglePositionRendering() { particlePositions = !particlePositions; }
-	const std::vector<Vertex>& getSimulatorVertices() const { return particleVertices; }
+
 	float getScale() const { return scale; }
 	void setColorCutting(bool colorCutting);
 
@@ -51,7 +52,7 @@ private:
 	void generateCircleVertices(const std::vector<Vertex>& vertices, int segments);
 	void applyBlur(GLuint textureID);
 
-	Simulator* fluidSimulator;
+	const FluidSimulation* fluidSimulation;
 	ShaderManager* shaderCache;
 
 	ScreenSize screenSize;

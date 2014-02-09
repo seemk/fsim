@@ -1,5 +1,5 @@
 #include "FluidRenderer.hpp"
-#include "FluidSimulator.hpp"
+#include "FluidSimulation.hpp"
 #include "Drawing.hpp"
 #include "ShaderManager.hpp"
 
@@ -14,27 +14,18 @@ static const GLfloat screenQuad[] =
 };
 
 FluidRenderer::FluidRenderer(int windowWidth, int windowHeight, float scaleFactor,
-	float particleRadius, Simulator* simulator, ShaderManager* cache)
-	: fluidSimulator(simulator)
+	float particleRadius, const FluidSimulation* simulator, ShaderManager* cache)
+	: fluidSimulation(simulator)
 	, shaderCache(cache)
 	, screenSize(windowWidth, windowHeight)
 	, scale(scaleFactor)
 	, particleRadius(particleRadius)
 	, blurred(true)
 	, blobInterpolation(true)
-	, particleVertices(simulator->getParticles().size())
+	, particleVertices(simulator->getParticleCount())
 	, particlePositions(false)
 	, pointCount(0)
 {
-
-	auto& particles = fluidSimulator->getParticles();
-	for (auto& particle : particles)
-	{
-			particle.r = 255;
-			particle.g = 255;
-			particle.b = 255;
-	}
-
 	setupBuffers();
 }
 
@@ -43,13 +34,13 @@ void FluidRenderer::setParticleRadius(float radius)
 	particleRadius = radius;
 }
 
-void FluidRenderer::render(const std::vector<Vertex>& vertices)
+void FluidRenderer::render()
 {
 
 	Drawing::setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 
 	const int segments = 18;
-	generateCircleVertices(vertices, segments);
+	generateCircleVertices(particleVertices, segments);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, lowResBufferHandle);
 	
@@ -66,7 +57,7 @@ void FluidRenderer::render(const std::vector<Vertex>& vertices)
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), nullptr);
 	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void*)sizeof(glm::vec2));
-	for (size_t i = 0; i < vertices.size(); ++i)
+	for (size_t i = 0; i < particleVertices.size(); ++i)
 	{
 		glDrawArrays(GL_POLYGON, i * segments, segments);
 	}
@@ -113,7 +104,7 @@ void FluidRenderer::render(const std::vector<Vertex>& vertices)
 	{
 		glPointSize(3.0f);
 		Drawing::setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-		Drawing::drawPoints(vertices);
+		Drawing::drawPoints(particleVertices);
 		
 	}
 }
@@ -212,13 +203,13 @@ void FluidRenderer::setupBuffers()
 
 void FluidRenderer::updatePositions()
 {
-	auto& particles = fluidSimulator->getParticles();
-	particleVertices.resize(particles.size());
+	auto& positions = fluidSimulation->getParticlePositions();
+	particleVertices.resize(positions.size());
 
-	std::transform(particles.cbegin(), particles.cend(), particleVertices.begin(), [=](const Particle& p)
+	std::transform(positions.cbegin(), positions.cend(), particleVertices.begin(), [=](const glm::vec2& p)
 	{
-
-		return Vertex{ p.x * scale, p.y * scale, p.r, p.g, p.b, 255 };
+		// TODO: Make it use renderparticles
+		return Vertex{ p.x * scale, p.y * scale, 255, 255, 255, 255 };
 	});
 }
 
@@ -239,4 +230,9 @@ void FluidRenderer::setColorCutting(bool colorCutting)
 	auto colorCutLocation = fluidPgm.getUniformLocation("colorCut");
 	fluidPgm.setUniformValue(colorCutLocation, static_cast<GLint>(colorCutting));
 	fluidPgm.unuse();
+}
+
+void FluidRenderer::setSimulation(const FluidSimulation* simulation)
+{
+	fluidSimulation = simulation;	
 }
