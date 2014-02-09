@@ -5,15 +5,8 @@
 #include "FluidRenderer.hpp"
 #include "Drawing.hpp"
 #include "ShaderManager.hpp"
-#include "AtoDemo.hpp"
 #include <chrono>
 #include <iostream>
-
-enum Demo : int
-{
-	AtoMorph,
-	Fluid
-};
 
 struct Mouse
 {
@@ -29,7 +22,6 @@ const int particlesX	= 100;
 const int particlesY	= 50;
 const float particleIncrement = 2.0f;
 const int demoCount = 2;
-int currentDemo = Fluid;
 bool paused = false;
 
 bool addingParticles	= false;
@@ -59,12 +51,6 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 	}
 }
 
-void switchDemo()
-{
-	++currentDemo;
-	currentDemo = currentDemo % demoCount;
-}
-
 void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int modifier)
 {
 	switch (key)
@@ -87,9 +73,6 @@ void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int modi
 	case GLFW_KEY_A:
 		if (action == GLFW_PRESS) addingParticles = true;
 		else if (action == GLFW_RELEASE) addingParticles = false;
-		break;
-	case GLFW_KEY_SPACE:
-		if (action == GLFW_RELEASE) switchDemo();
 		break;
 	case GLFW_KEY_B:
 		if (action == GLFW_RELEASE) renderer->toggleBlur();
@@ -161,8 +144,7 @@ int main(int argc, char** argv)
 		"\n\t P - pause"
 		"\n\t L - display particles"
 		"\n\t B - toggle blur"
-		"\n\t I - toggle interpolation + coloring shader"
-		"\n\t Space - toggles between atomorph and the simulator\n";
+		"\n\t I - toggle interpolation + coloring shader";
 				
 	shaderCache.initialise();
 	reshape(window, windowWidth, windowHeight);
@@ -178,9 +160,6 @@ int main(int argc, char** argv)
 	size_t frameCount = 0;
 	long long totalTime = 0;
 
-	AtoDemo atoDemo(1, renderer.get());
-	atoDemo.pause();
-
 	while (!glfwWindowShouldClose(window))
 	{
 
@@ -191,48 +170,21 @@ int main(int argc, char** argv)
 		glViewport(0, 0, windowWidth, windowHeight);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		switch (currentDemo)
-		{
-		case AtoMorph:
-		{
-						 if (atoDemo.paused)
-						 {
-							 renderer->setColorCutting(false);
-							 renderer->setParticleRadius(4.f);
-							 atoDemo.resume();
-						 }
-						 atoDemo.update();
-						 atoDemo.drawScene();
-		}
-		break;
-		case Fluid:
-		{
-					  if (!atoDemo.paused)
-					  {
-						  renderer->setColorCutting(true);
-						  renderer->setParticleRadius(8.f);
-						  atoDemo.pause();
-					  }
-					  fluid->setDrag(mouse.pressed);
-					  fluid->setMovePos(mouse.x / scaleFactor, mouse.y / scaleFactor);
-					  if (addingParticles)
-					  {
-						  fluid->addParticle(Particle(mouse.x / scaleFactor,
-							  mouse.y / scaleFactor, 1.0f, 1.0f));
 
-					  }
-					  if (!paused) fluid->step();
-					  renderer->updatePositions();
-					  renderer->render(renderer->getSimulatorVertices());
+		fluid->setDrag(mouse.pressed);
+		fluid->setMovePos(mouse.x / scaleFactor, mouse.y / scaleFactor);
+		if (addingParticles)
+		{
+			fluid->addParticle(Particle(mouse.x / scaleFactor,
+				mouse.y / scaleFactor, 1.0f, 1.0f));
+
 		}
-			break;
-		default:
-			break;
-		}
+		if (!paused) fluid->step();
+		renderer->updatePositions();
+		renderer->render(renderer->getSimulatorVertices());
 
 		auto end = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -240,6 +192,7 @@ int main(int argc, char** argv)
 		frameCount++;
 
 	}
+
 	glfwTerminate();
 	std::cout << "Finished. Average frame time: " << totalTime / frameCount << " ms.\n";
 	return 0;

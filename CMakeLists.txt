@@ -23,7 +23,6 @@ if( MSVC )
 endif( MSVC )
 
 file(COPY shaders DESTINATION ${OUT_DIR})
-file(COPY data DESTINATION ${OUT_DIR})
 set(GLEW_PATH "third_party/glew")
 set(GLFW_PATH "third_party/glfw")
 set(GLM_PATH "third_party/glm")
