@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/ext.hpp>
 #include "MPMSimulation.hpp"
+#include "Box2DSimulation.hpp"
 #include "FluidRenderer.hpp"
 #include "Drawing.hpp"
 #include "ShaderManager.hpp"
@@ -147,6 +148,8 @@ int main(int argc, char** argv)
 	reshape(window, windowWidth, windowHeight);
 	Drawing::init(&shaderCache, windowWidth, windowHeight);
 	int scale = static_cast<int>(scaleFactor);
+	auto box2DSimulation = std::make_unique<Box2DSimulation>();
+	box2DSimulation->createParticles(20, 20);
 	auto mpmSimulation = std::make_unique<MPMSimulation>(windowWidth / scale, windowHeight / scale);
 	std::unique_ptr<FluidSimulation> fluid = std::move(mpmSimulation);
 	fluid->createParticles(particlesX, particlesY);
