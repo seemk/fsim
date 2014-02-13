@@ -1,8 +1,8 @@
 #include "Box2DSimulation.hpp"
 #include <Box2D/Box2D.h>
+#include <iterator>
 
-// Simulation is a port of this: https://github.com/klutch/Box2DFluid
-// TODO: EVERYTHING
+// Simulation is a port of https://github.com/klutch/Box2DFluid
 
 class QueryResult : public b2QueryCallback
 {
@@ -124,12 +124,17 @@ void Box2DSimulation::addParticle(glm::vec2 location)
 
 size_t Box2DSimulation::getParticleCount() const
 {
-	return 0;
+	return particles.size();
 }
 
 std::vector<glm::vec2> Box2DSimulation::getParticlePositions() const
 {
-	return std::vector<glm::vec2>{};
+	std::vector<glm::vec2> positions;
+	positions.reserve(getParticleCount());
+	std::transform(particles.begin(), particles.end(), std::back_inserter(positions), [](const Particle& p) {
+		return p.position;
+	});
+	return positions;
 }
 
 void Box2DSimulation::setDragging(bool drag)
