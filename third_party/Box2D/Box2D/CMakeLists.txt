@@ -89,8 +89,8 @@ set(BOX2D_Joints_SRCS
 	Dynamics/Joints/b2FrictionJoint.cpp
 	Dynamics/Joints/b2GearJoint.cpp
 	Dynamics/Joints/b2Joint.cpp
-	Dynamics/Joints/b2MotorJoint.cpp
 	Dynamics/Joints/b2MouseJoint.cpp
+	Dynamics/Joints/b2MotorJoint.cpp
 	Dynamics/Joints/b2PrismaticJoint.cpp
 	Dynamics/Joints/b2PulleyJoint.cpp
 	Dynamics/Joints/b2RevoluteJoint.cpp
@@ -103,7 +103,6 @@ set(BOX2D_Joints_HDRS
 	Dynamics/Joints/b2FrictionJoint.h
 	Dynamics/Joints/b2GearJoint.h
 	Dynamics/Joints/b2Joint.h
-	Dynamics/Joints/b2MotorJoint.h
 	Dynamics/Joints/b2MouseJoint.h
 	Dynamics/Joints/b2PrismaticJoint.h
 	Dynamics/Joints/b2PulleyJoint.h
@@ -111,6 +110,19 @@ set(BOX2D_Joints_HDRS
 	Dynamics/Joints/b2RopeJoint.h
 	Dynamics/Joints/b2WeldJoint.h
 	Dynamics/Joints/b2WheelJoint.h
+)
+set(BOX2D_Particle_SRCS
+	Particle/b2Particle.cpp
+	Particle/b2ParticleGroup.cpp
+	Particle/b2ParticleSystem.cpp
+	Particle/b2VoronoiDiagram.cpp
+)
+set(BOX2D_Particle_HDRS
+	Particle/b2Particle.h
+	Particle/b2ParticleGroup.h
+	Particle/b2ParticleSystem.h
+	Particle/b2StackQueue.h
+	Particle/b2VoronoiDiagram.h
 )
 set(BOX2D_Rope_SRCS
 	Rope/b2Rope.cpp
@@ -137,10 +149,13 @@ add_library(Box2D STATIC
 	${BOX2D_Shapes_HDRS}
 	${BOX2D_Collision_SRCS}
 	${BOX2D_Collision_HDRS}
+	${BOX2D_Particle_SRCS}
+	${BOX2D_Particle_HDRS}
 	${BOX2D_Rope_SRCS}
 	${BOX2D_Rope_HDRS}
 )
 set_target_properties(Box2D PROPERTIES
+	OUTPUT_NAME "liquidfun"
 	CLEAN_DIRECT_OUTPUT 1
 	VERSION ${BOX2D_VERSION}
 )
@@ -154,4 +169,5 @@ source_group(Dynamics FILES ${BOX2D_Dynamics_SRCS} ${BOX2D_Dynamics_HDRS})
 source_group(Dynamics\\Contacts FILES ${BOX2D_Contacts_SRCS} ${BOX2D_Contacts_HDRS})
 source_group(Dynamics\\Joints FILES ${BOX2D_Joints_SRCS} ${BOX2D_Joints_HDRS})
 source_group(Include FILES ${BOX2D_General_HDRS})
+source_group(Particle FILES ${BOX2D_Particle_SRCS} ${BOX2D_Particle_HDRS})
 source_group(Rope FILES ${BOX2D_Rope_SRCS} ${BOX2D_Rope_HDRS})

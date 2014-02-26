@@ -1,5 +1,6 @@
 /*
 * Copyright (c) 2006-2011 Erin Catto http://www.box2d.org
+* Copyright (c) 2013 Google, Inc.
 *
 * This software is provided 'as-is', without any express or implied
 * warranty.  In no event will the authors be held liable for any damages
@@ -154,8 +155,8 @@ public:
 	void DestroyFixture(b2Fixture* fixture);
 
 	/// Set the position of the body's origin and rotation.
+	/// This breaks any contacts and wakes the other bodies.
 	/// Manipulating a body's transform may cause non-physical behavior.
-	/// Note: contacts are updated on the next call to b2World::Step.
 	/// @param position the world position of the body's local origin.
 	/// @param angle the world rotation in radians.
 	void SetTransform(const b2Vec2& position, float32 angle);
@@ -324,7 +325,7 @@ public:
 	void SetAwake(bool flag);
 
 	/// Get the sleeping state of this body.
-	/// @return true if the body is awake.
+	/// @return true if the body is sleeping.
 	bool IsAwake() const;
 
 	/// Set the active state of the body. An inactive body is not
@@ -403,6 +404,9 @@ private:
 	friend class b2WeldJoint;
 	friend class b2WheelJoint;
 
+	friend class b2ParticleSystem;
+	friend class b2ParticleGroup;
+
 	// m_flags
 	enum
 	{
@@ -434,6 +438,7 @@ private:
 	int32 m_islandIndex;
 
 	b2Transform m_xf;		// the body origin transform
+	b2Transform m_xf0;		// the previous transform for particle simulation
 	b2Sweep m_sweep;		// the swept motion for CCD
 
 	b2Vec2 m_linearVelocity;

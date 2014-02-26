@@ -1,5 +1,6 @@
 /*
 * Copyright (c) 2006-2009 Erin Catto http://www.box2d.org
+* Copyright (c) 2013 Google, Inc.
 *
 * This software is provided 'as-is', without any express or implied
 * warranty.  In no event will the authors be held liable for any damages
@@ -17,9 +18,11 @@
 */
 
 #include <Box2D/Common/b2BlockAllocator.h>
-#include <limits.h>
-#include <memory.h>
-#include <stddef.h>
+#include <cstdlib>
+#include <climits>
+#include <cstring>
+#include <memory>
+using namespace std;
 
 int32 b2BlockAllocator::s_blockSizes[b2_blockSizes] = 
 {
@@ -129,7 +132,7 @@ void* b2BlockAllocator::Allocate(int32 size)
 
 		b2Chunk* chunk = m_chunks + m_chunkCount;
 		chunk->blocks = (b2Block*)b2Alloc(b2_chunkSize);
-#if defined(_DEBUG)
+#if DEBUG
 		memset(chunk->blocks, 0xcd, b2_chunkSize);
 #endif
 		int32 blockSize = s_blockSizes[index];
@@ -170,7 +173,7 @@ void b2BlockAllocator::Free(void* p, int32 size)
 	int32 index = s_blockSizeLookup[size];
 	b2Assert(0 <= index && index < b2_blockSizes);
 
-#ifdef _DEBUG
+#if DEBUG
 	// Verify the memory address and size is valid.
 	int32 blockSize = s_blockSizes[index];
 	bool found = false;
