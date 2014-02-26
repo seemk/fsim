@@ -4,6 +4,7 @@
 */
 
 #include "Array2D.hpp"
+#include "ScreenSize.hpp"
 #include <random>
 #include <memory>
 #include "FluidSimulation.hpp"
@@ -116,25 +117,25 @@ struct MPMMaterial
 
 class MPMSimulation : public FluidSimulation
 {
-	typedef std::uniform_real_distribution<float> Distribution;
+	typedef std::uniform_real_distribution<float> distribution_t;
 
 public:
 
-	MPMSimulation(int gridSizeX, int gridSizeY);
+	MPMSimulation(ScreenSize screenSize, float scale);
 
 	void update(float dt) override;
 	void createParticles(size_t horizontalAmount, size_t verticalAmount) override;
-	void addParticle(glm::vec2 location) override;
+	void addParticles(glm::vec2 location, size_t count) override;
 	size_t getParticleCount() const override;
 	void setDragging(bool drag) override;
 	void setInputPosition(glm::vec2 position) override;
 	std::vector<glm::vec2> getParticlePositions() const override;
+	void debugDraw() const override;
+
+	distribution_t distribution;
+	std::mt19937 generator;
 
 	Array2D<MPMNode>& getGrid() { return grid; }
-
-	std::random_device rd;
-	Distribution distribution;
-	std::mt19937 generator;
 
 	float genRand() { return distribution(generator); }
 	size_t particleCount() const { return particles.size(); }
@@ -149,6 +150,7 @@ private:
 	float	my;
 	float	mxPrev;
 	float	myPrev;
+	float	simulationScale = 1.0f;
 
 	Array2D<MPMNode>			grid;
 	std::vector<MPMNode*>		active;

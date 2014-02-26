@@ -37,21 +37,21 @@ namespace Drawing
 
 	}
 
-	void drawPoints(const std::vector<Vertex>& points)
+	void drawPoints(const Point* pts, size_t count)
 	{
-		std::transform(points.begin(), points.end(), drawBuffer.begin(), [](const Vertex& v)
-		{
-			return v.position;
-		});
+		//std::transform(points.begin(), points.end(), drawBuffer.begin(), [](const Vertex& v)
+		//{
+		//	return v.position;
+		//});
 		auto program = shaderCache->getProgram(GL::ProgramType::Default);
 		
 		glBindBuffer(GL_ARRAY_BUFFER, drawBufferVBO);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * points.size(), &drawBuffer[0]);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * count, pts);
 
 		program.use();
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-		glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(points.size()));
+		glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(count));
 		glDisableVertexAttribArray(0);
 		glUseProgram(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -98,11 +98,11 @@ namespace Drawing
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	void drawLines(const std::vector<Line>& lines)
+	void drawLines(const Line* lines, size_t count)
 	{
-		const size_t vertices = 2 * lines.size();
+		const size_t vertices = 2 * count;
 		glBindBuffer(GL_ARRAY_BUFFER, drawBufferVBO);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * vertices, &lines[0]);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * vertices, lines);
 
 		auto program = shaderCache->getProgram(GL::ProgramType::Default);
 		program.use();
@@ -114,37 +114,42 @@ namespace Drawing
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	void setColor(glm::vec4 color)
+	void setColor(float r, float g, float b, float a)
 	{
 		auto pgm = shaderCache->getProgram(GL::ProgramType::Default);
 		pgm.use();
-		pgm.setUniformValue(colorLocation, color);
+		pgm.setUniformValue(colorLocation, glm::vec4(r, g, b, a));
 		pgm.unuse();
 	}
 
-	void drawBox(const Point& bottomLeft, const Point& topRight)
+	void drawBox(const Point& topLeft, const Point& size)
 	{
 		const size_t segments = 4;
-		auto size = topRight - bottomLeft;
+		const Point pts[segments] = { topLeft,
+			Point(topLeft.x, topLeft.y + size.y),
+			Point(topLeft.x + size.x, topLeft.y + size.y),
+			Point(topLeft.x + size.x, topLeft.y) };
 
-		drawBuffer[0] = bottomLeft;
-		drawBuffer[1] = Point(bottomLeft.x + size.x, bottomLeft.y);
-		drawBuffer[2] = topRight;
-		drawBuffer[3] = Point(bottomLeft.x, bottomLeft.y + size.y);
+		drawPolygon(pts, segments);
+	}
+
+	void drawPolygon(const Point* pts, size_t count)
+	{
 
 		glBindBuffer(GL_ARRAY_BUFFER, drawBufferVBO);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * segments, &drawBuffer[0]);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * count, pts);
 
 		auto pgm = shaderCache->getProgram(GL::ProgramType::Default);
 		pgm.use();
 
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
-		glDrawArrays(GL_LINE_LOOP, 0, segments);
+		glDrawArrays(GL_LINE_LOOP, 0, count);
+		pgm.unuse();
 		glDisableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-		pgm.unuse();
+		
 	}
 
 }

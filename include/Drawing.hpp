@@ -10,10 +10,11 @@ namespace Drawing
 	// Initializes the drawing functions with the default shaders.
 	void init(const ShaderManager* cache, int windowWidth, int windowHeight);
 
-	void drawPoints(const std::vector<Vertex>& points);
+	void drawPoints(const Point* pts, size_t count);
 	void drawGrid(glm::vec2 start, glm::vec2 end, size_t rows, size_t cols);
-	void drawLines(const std::vector<Line>& lines);
-	void drawBox(const Point& bottomLeft, const Point& topRight);
-	void setColor(glm::vec4 color);
+	void drawLines(const Line* lines, size_t count);
+	void drawBox(const Point& topLeft, const Point& size);
+	void drawPolygon(const Point* pts, size_t count);
+	void setColor(float r, float g, float b, float a);
 
 }

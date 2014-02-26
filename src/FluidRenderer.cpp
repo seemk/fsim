@@ -2,6 +2,7 @@
 #include "FluidSimulation.hpp"
 #include "Drawing.hpp"
 #include "ShaderManager.hpp"
+#include <iostream>
 
 static const GLfloat screenQuad[] =
 {
@@ -13,12 +14,11 @@ static const GLfloat screenQuad[] =
 	-1.0f, 1.0f, 0.0f, 1.0f
 };
 
-FluidRenderer::FluidRenderer(int windowWidth, int windowHeight, float scaleFactor,
+FluidRenderer::FluidRenderer(int windowWidth, int windowHeight,
 	float particleRadius, const FluidSimulation* simulator, ShaderManager* cache)
 	: fluidSimulation(simulator)
 	, shaderCache(cache)
 	, screenSize(windowWidth, windowHeight)
-	, scale(scaleFactor)
 	, particleRadius(particleRadius)
 	, blurred(true)
 	, blobInterpolation(true)
@@ -37,7 +37,7 @@ void FluidRenderer::setParticleRadius(float radius)
 void FluidRenderer::render()
 {
 
-	Drawing::setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+	Drawing::setColor(1.0f, 0.0f, 0.0f, 1.0f);
 
 	const int segments = 18;
 	generateCircleVertices(particleVertices, segments);
@@ -103,8 +103,8 @@ void FluidRenderer::render()
 	if (particlePositions)
 	{
 		glPointSize(3.0f);
-		Drawing::setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-		Drawing::drawPoints(particleVertices);
+		Drawing::setColor(1.0f, 0.0f, 0.0f, 1.0f);
+		Drawing::drawPoints(positions.data(), positions.size());
 		
 	}
 }
@@ -163,6 +163,14 @@ void FluidRenderer::setupBuffers()
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, lowResTextureHandle, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	// Vertex buffer objects
+	glGenVertexArrays(1, &vertexAttribObject);
+	glBindVertexArray(vertexAttribObject);
+	glGenBuffers(1, &vertexBufferHandle);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
+	glBufferData(GL_ARRAY_BUFFER, vertexBuffer.size() * sizeof(float), nullptr, GL_STREAM_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// Screen quad buffer
 	glGenVertexArrays(1, &screenVAO);
@@ -171,15 +179,6 @@ void FluidRenderer::setupBuffers()
 
 	glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(screenQuad), screenQuad, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// Vertex buffer objects
-	glGenVertexArrays(1, &vertexAttribObject);
-	glBindVertexArray(vertexAttribObject);
-	glGenBuffers(1, &vertexBufferHandle);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
-	glBufferData(GL_ARRAY_BUFFER, vertexBuffer.size() * sizeof(float), nullptr, GL_STREAM_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// Offscreen buffer
@@ -203,13 +202,13 @@ void FluidRenderer::setupBuffers()
 
 void FluidRenderer::updatePositions()
 {
-	auto& positions = fluidSimulation->getParticlePositions();
+	positions = fluidSimulation->getParticlePositions();
 	particleVertices.resize(positions.size());
 
 	std::transform(positions.cbegin(), positions.cend(), particleVertices.begin(), [=](const glm::vec2& p)
 	{
 		// TODO: Make it use renderparticles
-		return Vertex{ p.x * scale, p.y * scale, 255, 255, 255, 255 };
+		return Vertex{ p.x, p.y, 255, 255, 255, 255 };
 	});
 }
 

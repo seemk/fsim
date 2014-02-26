@@ -1,37 +1,18 @@
 #pragma once
 #include <Geometry.hpp>
 #include "Vertex.hpp"
+#include "ScreenSize.hpp"
 #include <vector>
 #include <array>
 
 class FluidSimulation;
 class ShaderManager;
 
-struct ScreenSize
-{
-
-	ScreenSize(int screenWidth, int screenHeight)
-	: width(static_cast<float>(screenWidth))
-	, height(static_cast<float>(screenHeight))
-	, iWidth(screenWidth)
-	, iHeight(screenHeight)
-	{
-
-	}
-
-	float width;
-	float height;
-	int iWidth;
-	int iHeight;
-
-};
-
 class FluidRenderer
 {
 public:
 
-	FluidRenderer(int windowWidth, int windowHeight,
-				float scaleFactor, float particleRadius,
+	FluidRenderer(int windowWidth, int windowHeight, float particleRadius,
 				const FluidSimulation* simulation, ShaderManager* cache);
 
 	void setSimulation(const FluidSimulation* simulation);
@@ -42,8 +23,6 @@ public:
 	void toggleBlur();
 	void toggleBlobInterpolation() { blobInterpolation = !blobInterpolation; }
 	void togglePositionRendering() { particlePositions = !particlePositions; }
-
-	float getScale() const { return scale; }
 	void setColorCutting(bool colorCutting);
 
 private:
@@ -56,7 +35,6 @@ private:
 	ShaderManager* shaderCache;
 
 	ScreenSize screenSize;
-	float scale;
 	float particleRadius;
 	bool particlePositions;
 	bool blurred;
@@ -72,6 +50,7 @@ private:
 	size_t pointCount;
 	const int textureScale = 4;
 
+	std::vector<glm::vec2> positions;
 	std::vector<Vertex> particleVertices;
 	std::array<Vertex, 512000 * 8> vertexBuffer;
 };

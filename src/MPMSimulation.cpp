@@ -7,26 +7,35 @@ void MPMNode::clear()
 	active = false;
 }
 
-MPMSimulation::MPMSimulation(int gridSizeX, int gridSizeY)
-	: gsizeX(gridSizeX)
-	, gsizeY(gridSizeY)
+MPMSimulation::MPMSimulation(ScreenSize screenSize, float scale)
+	: gsizeX(screenSize.iWidth / static_cast<int>(scale))
+	, gsizeY(screenSize.iHeight / static_cast<int>(scale))
 	, pressed(false)
 	, pressedPrev(false)
 	, mx(0.0f)
 	, my(0.0f)
 	, mxPrev(0.0f)
 	, myPrev(0.0f)
+	, simulationScale(scale)
 	, mat(1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f)
 	, grid(gsizeX, gsizeY)
-	, generator(rd())
+	, generator(std::random_device()())
 	, distribution(0.0f, 0.01f)
 {
 
 }
 
-void MPMSimulation::addParticle(glm::vec2 location)
+void MPMSimulation::debugDraw() const
 {
-	particles.emplace_back(location.x, location.y, 1.0f, 1.0f);
+
+}
+
+void MPMSimulation::addParticles(glm::vec2 location, size_t count)
+{
+	for (size_t i = 0; i < count; i++)
+	{
+		particles.emplace_back(location.x + 3.0f, location.y + 3.0f, 1.0f, 1.0f);
+	}
 }
 
 void MPMSimulation::update(float dt)
@@ -297,8 +306,8 @@ void MPMSimulation::setDragging(bool drag)
 
 void MPMSimulation::setInputPosition(glm::vec2 position)
 {
-	mx = position.x;
-	my = position.y;
+	mx = position.x / simulationScale;
+	my = position.y / simulationScale;
 }
 
 size_t MPMSimulation::getParticleCount() const
@@ -310,8 +319,8 @@ std::vector<glm::vec2> MPMSimulation::getParticlePositions() const
 {
 	std::vector<glm::vec2> positions;
 	positions.reserve(particleCount());
-	std::transform(particles.begin(), particles.end(), std::back_inserter(positions), [](const MPMParticle& p) {
-		return glm::vec2(p.x, p.y);
+	std::transform(particles.begin(), particles.end(), std::back_inserter(positions), [=](const MPMParticle& p) {
+		return glm::vec2(p.x * simulationScale, p.y * simulationScale);
 	});
 
 	return positions;

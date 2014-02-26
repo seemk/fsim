@@ -16,20 +16,25 @@ struct Mouse
 	bool pressed;
 };
 
-Mouse mouse = { 0.0f, 0.0f, false };
-const int windowWidth	= 1280;
-const int windowHeight	= 720;
-const int particlesX	= 100;
-const int particlesY	= 50;
-const float particleIncrement = 2.0f;
-const int demoCount = 2;
-bool paused = false;
+namespace
+{
+	Mouse mouse = { 0.0f, 0.0f, false };
+	const int windowWidth = 1280;
+	const int windowHeight = 720;
+	const int particlesX = 100;
+	const int particlesY = 50;
+	const float particleIncrement = 2.0f;
+	const int demoCount = 2;
+	bool paused = false;
 
-bool addingParticles	= false;
-float scaleFactor		= 8.f;
+	bool addingParticles = false;
+	float scaleFactor = 8.f;
 
-static ShaderManager shaderCache;
-static std::unique_ptr<FluidRenderer> renderer;
+	ShaderManager shaderCache;
+	std::unique_ptr<FluidRenderer> renderer;
+	std::unique_ptr<FluidSimulation> simulation;
+}
+
 
 void cursorPosition(GLFWwindow* window, double x, double y)
 {
@@ -87,6 +92,23 @@ void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int modi
 	case GLFW_KEY_L:
 		if (action == GLFW_RELEASE) renderer->togglePositionRendering();
 		break;
+	case GLFW_KEY_1:
+		if (action == GLFW_RELEASE)
+		{
+			auto mpmSimulation = std::make_unique<MPMSimulation>(ScreenSize(windowWidth, windowHeight), scaleFactor);
+			simulation = std::move(mpmSimulation);
+			simulation->createParticles(particlesX, particlesY);
+			renderer->setSimulation(simulation.get());
+		}
+		break;
+	case GLFW_KEY_2:
+		if (action == GLFW_RELEASE)
+		{
+			auto box2DSimulation = std::make_unique<Box2DSimulation>(ScreenSize(windowWidth, windowHeight));
+			simulation = std::move(box2DSimulation);
+			renderer->setSimulation(simulation.get());
+		}
+		break;
 	default:
 		break;
 	}
@@ -142,24 +164,24 @@ int main(int argc, char** argv)
 		"\n\t P - pause"
 		"\n\t L - display particles"
 		"\n\t B - toggle blur"
-		"\n\t I - toggle interpolation + coloring shader";
-				
+		"\n\t I - toggle interpolation + coloring shader"
+		"\n\t (1-2) - switch simulations\n\n";
+	
+
+
 	shaderCache.initialise();
 	reshape(window, windowWidth, windowHeight);
 	Drawing::init(&shaderCache, windowWidth, windowHeight);
-	int scale = static_cast<int>(scaleFactor);
-	auto box2DSimulation = std::make_unique<Box2DSimulation>();
-	box2DSimulation->createParticles(20, 20);
-	auto mpmSimulation = std::make_unique<MPMSimulation>(windowWidth / scale, windowHeight / scale);
-	std::unique_ptr<FluidSimulation> fluid = std::move(mpmSimulation);
-	fluid->createParticles(particlesX, particlesY);
-	fluid->update(0.0f);
-	float particleRadius = 8.f;
-	renderer.reset(new FluidRenderer(windowWidth, windowHeight, scaleFactor, particleRadius, fluid.get(), &shaderCache));
+
+	auto box2DSimulation = std::make_unique<Box2DSimulation>(ScreenSize(windowWidth, windowHeight));
+	simulation = std::move(box2DSimulation);
+
+	float particleRadius = 6.f;
+
+	renderer.reset(new FluidRenderer(windowWidth, windowHeight, particleRadius, simulation.get(), &shaderCache));
 	int width, height;
 	size_t frameCount = 0;
 	long long totalTime = 0;
-
 	while (!glfwWindowShouldClose(window))
 	{
 
@@ -169,21 +191,20 @@ int main(int argc, char** argv)
 		glViewport(0, 0, windowWidth, windowHeight);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-
-		fluid->setDragging(mouse.pressed);
-		auto mousePosition = glm::vec2{ mouse.x / scaleFactor, mouse.y / scaleFactor };
-		fluid->setInputPosition(mousePosition);
+		simulation->setDragging(mouse.pressed);
+		auto mousePosition = glm::vec2{ mouse.x, mouse.y };
+		simulation->setInputPosition(mousePosition);
 		if (addingParticles)
 		{
-			fluid->addParticle(mousePosition);
+			simulation->addParticles(mousePosition, 16);
 		}
-		if (!paused) fluid->update(0.167f); // TODO: Remove the constant
+		if (!paused) simulation->update(0.167f); // TODO: Remove the constant
 		renderer->updatePositions();
 		renderer->render();
-
+		simulation->debugDraw();
+		
 		auto end = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 		totalTime += duration.count();

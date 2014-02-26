@@ -6,6 +6,11 @@ typedef glm::vec2 Point;
 
 struct Line
 {
+	Line(Point p1, Point p2)
+	: start(p1)
+	, end(p2)
+	{ }
+
 	Point start;
 	Point end;
 };
